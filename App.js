@@ -46,7 +46,19 @@ export default function App() {
  const saveProfile=async(p)=>{setProfile(p); await AsyncStorage.setItem('profile',JSON.stringify(p)); if(p.email==='danny@virtualbeehiveinc.com' && p.password==='YaPe1200@') setAdmin(true);};
  const bg=dark?'#070b12':'#f8fafc', fg=dark?'#fff':'#0f172a';
  return <SafeAreaView style={[styles.root,{backgroundColor:bg}]}><StatusBar style={dark?'light':'dark'} />
-  <View style={[styles.header,dark?{backgroundColor:'#0f172a'}:{backgroundColor:'#fff'}]}><Image source={require('./assets/app-logo.png')} style={width:42,height:42,borderRadius:21}/><View style={flex:1}><Text style={[styles.tiny,{color:'#fbbf24'}]}>Virtual Beehive Inc.</Text><Text style={[styles.title,{color:fg}]}>FIFA WorldCup 2026 Predictor</Text></View><TouchableOpacity onPress={()=>setDark(!dark)}><Text style={fontSize:24}>{dark?'☀️':'🌙'}</Text></TouchableOpacity><TouchableOpacity onPress={()=>setMenu(true)}><Text style={fontSize:30,color:fg}>☰</Text></TouchableOpacity></View>
+<View style={[styles.header, dark ? { backgroundColor: '#0f172a' } : { backgroundColor: '#fff' }]}>
+  <Image source={require('./assets/app-logo.png')} style={{ width: 42, height: 42, borderRadius: 21 }} />
+  <View style={{ flex: 1 }}>
+    <Text style={[styles.tiny, { color: '#fbbf24' }]}>Virtual Beehive Inc.</Text>
+    <Text style={[styles.title, { color: fg }]}>FIFA WorldCup 2026 Predictor</Text>
+  </View>
+  <TouchableOpacity onPress={() => setDark(!dark)}>
+    <Text style={{ fontSize: 24 }}>{dark ? '☀️' : '🌙'}</Text>
+  </TouchableOpacity>
+  <TouchableOpacity onPress={() => setMenu(true)}>
+    <Text style={{ fontSize: 30, color: fg }}>☰</Text>
+  </TouchableOpacity>
+</View>
   <SponsorBanner dark={dark} />
   <View style={flex:1}>{tab==='matches'&&<Matches dark={dark} fg={fg} preds={preds} savePreds={savePreds} selected={selected} setSelected={setSelected} setTeamOpen={setTeamOpen}/>}{tab==='groups'&&<Groups dark={dark} fg={fg} champ={champ} setChamp={async(c)=>{if(champ) return Alert.alert('Champion locked','You already confirmed your champion.'); Alert.alert('Confirm champion',`Choose ${c} as your champion? This can be selected only once.`,[{text:'Cancel'},{text:'Confirm',onPress:async()=>{setChamp(c); await AsyncStorage.setItem('champion',c);}}])}} setTeamOpen={setTeamOpen}/>}{tab==='news'&&<News dark={dark} fg={fg} setNewsOpen={setNewsOpen}/>}{tab==='top'&&<TopPredictors dark={dark} fg={fg}/>}{tab==='menu'&&<MenuScreen dark={dark} fg={fg} profile={profile} saveProfile={saveProfile} admin={admin}/>}</View>
   <View style={[styles.nav,dark?{backgroundColor:'#111827'}:{backgroundColor:'#fff'}]}>{[['matches','Matches'],['groups','Groups'],['news','News'],['top','Top'],['menu','Menu']].map(n=><TouchableOpacity key={n[0]} onPress={()=>setTab(n[0])} style={[styles.navBtn,tab===n[0]&&{backgroundColor:'#fbbf24'}]}><Text style={fontWeight:'900',color:tab===n[0]?'#000':fg}>{n[1]}</Text></TouchableOpacity>)}</View>
