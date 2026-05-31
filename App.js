@@ -31,7 +31,13 @@ function SponsorBanner({dark}) {
  useEffect(()=>{Animated.loop(Animated.sequence([Animated.timing(x,{toValue:-130,duration:6500,useNativeDriver:true}),Animated.timing(x,{toValue:0,duration:0,useNativeDriver:true})])).start()},[]);
  return <View style={[styles.sponsor, dark?styles.cardDark:styles.cardLight]}><Animated.Text style={[styles.sponsorText,{transform:[{translateX:x}]}]}>🐝 Sponsored by Hobbee.FUN   •   Visit Hobbee.FUN   •   Sponsor banner can be changed from hidden admin later   •   </Animated.Text></View>
 }
-function AdBox({dark}) { return <View style={[styles.adBox,dark?{borderColor:'#334155'}:{borderColor:'#cbd5e1'}]}><Text style={color:dark?'#94a3b8':'#475569'}>Advertisement</Text></View>}
+function AdBox({ dark }) {
+  return (
+    <View style={[styles.adBox, dark ? { borderColor: '#334155' } : { borderColor: '#cbd5e1' }]}>
+      <Text style={{ color: dark ? '#94a3b8' : '#475569' }}>Advertisement</Text>
+    </View>
+  );
+}
 
 export default function App() {
  const [dark,setDark]=useState(true); const [tab,setTab]=useState('matches'); const [selected,setSelected]=useState(null); const [teamOpen,setTeamOpen]=useState(null); const [newsOpen,setNewsOpen]=useState(null); const [menu,setMenu]=useState(false); const [preds,setPreds]=useState({}); const [champ,setChamp]=useState(null); const [profile,setProfile]=useState({name:'',nickname:'',age:'',sex:'',location:'',email:'',password:''}); const [admin,setAdmin]=useState(false);
