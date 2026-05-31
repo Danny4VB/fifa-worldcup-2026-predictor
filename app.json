@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "FIFA WorldCup 2026 Predictor",
+    "slug": "fifa-worldcup-2026-predictor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/app-logo.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/app-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#080B12"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.virtualbeehive.fifaworldcup2026predictor",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location only to show your country on prediction features and leaderboard display.",
+        "NSPhotoLibraryUsageDescription": "We use your photo library so you can choose a profile picture."
+      }
+    },
+    "android": {
+      "package": "com.virtualbeehive.fifaworldcup2026predictor",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-logo.png",
+        "backgroundColor": "#080B12"
+      },
+      "permissions": ["ACCESS_COARSE_LOCATION", "READ_MEDIA_IMAGES"]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-this-after-eas-init"
+      }
+    }
+  }
+}
