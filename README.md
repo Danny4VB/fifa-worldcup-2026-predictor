@@ -1,46 +1,26 @@
-# FIFA WorldCup 2026 Predictor
+# FIFA WorldCup 2026 Predictor - Phase 2A
 
-A Phase 1 Expo/React Native APK preview for Virtual Beehive Inc.
+Phase 2A update for local APK testing.
 
-## What is included
+## Includes
+- All 104 World Cup 2026 matches
+- Match detail prediction page at the top
+- Countdown to prediction lock
+- Local prediction saving with AsyncStorage
+- Hobbee.FUN moving sponsor banner placeholder
+- Redesigned groups/champion page
+- News detail page
+- Team comparison and team player detail pages
+- Hidden admin placeholder through menu sign-in
 
-- Matches tab with past/live/upcoming cards
-- Prediction score controls
-- Our Users' Prediction average score
-- Match detail tabs: Summary, Head-to-head, Team A, Team B
-- Full 48-team champion picker
-- 12-group tournament map preview
-- Players & Goals tab
-- News tab
-- Top Predictors leaderboard
-- Profile/settings with dark mode and location permission demo
-- Sponsor card defaulting to Hobbee.FUN
-- Ad placeholder areas
-- Admin preview dashboard
-- App icon from `assets/app-logo.png`
-
-## Install and run locally
-
+## Install/update commands
 ```bash
 npm install
-npx expo start
-```
-
-Use Expo Go on your phone for quick preview.
-
-## Build APK with EAS
-
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure
+npx expo install --fix
+git add .
+git commit -m "Phase 2A real fixtures and local prediction flow"
+git push
 eas build -p android --profile preview
 ```
 
-The `preview` profile in `eas.json` builds an APK for Android testing.
-
-## Notes
-
-- This Phase 1 version uses local mock data.
-- Backend, login, database, live/free sports API, AdMob, admin roles, screenshot sharing, and production privacy tools should be added in Phase 2.
-- Confirm rights before using official FIFA names, event logos, or official ball artwork in public app stores.
+Do not add expo-asset/expo-font/expo-status-bar to app.json plugins manually.
