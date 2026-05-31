@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#080B12"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.virtualbeehive.fifaworldcup2026predictor",
@@ -26,12 +28,16 @@
         "foregroundImage": "./assets/app-logo.png",
         "backgroundColor": "#080B12"
       },
-      "permissions": ["ACCESS_COARSE_LOCATION", "READ_MEDIA_IMAGES"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "extra": {
       "eas": {
-        "projectId": "replace-this-after-eas-init"
+        "projectId": "1d287dd3-5cd5-4c61-ac1b-dabf9e8af990"
       }
-    }
+    },
+    
   }
 }
