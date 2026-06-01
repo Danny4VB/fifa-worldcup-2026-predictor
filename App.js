@@ -672,7 +672,143 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
   );
 }
 
-function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, firebaseUser, onOpenSignIn, onSignOut }) {
+
+function AdminScreen({ dark, onClose, firebaseUser, admin }) {
+  const fg = dark ? '#ffffff' : '#0f172a';
+  const [sponsorForm, setSponsorForm] = useState({
+    name: 'Hobbee.FUN',
+    message: 'Discover hobbies and share predictions with fans.',
+    callToAction: 'Visit Hobbee.FUN',
+    linkUrl: 'https://hobbee.fun',
+    logoUrl: '',
+  });
+  const [matchForm, setMatchForm] = useState({ matchId: '1', teamAScore: '0', teamBScore: '0', status: 'upcoming' });
+  const [newsForm, setNewsForm] = useState({ title: '', source: 'Virtual Beehive Inc.', body: '', url: '' });
+  const [imageForm, setImageForm] = useState({ collection: 'stadiums', docId: '', imageUrl: '', coachImageUrl: '', playerImageUrl: '', jerseyHomeUrl: '', jerseyAwayUrl: '' });
+
+  async function requireAdmin() {
+    if (!firebaseUser || !admin) {
+      Alert.alert('Admin access required', 'Please sign in with the approved admin account first.');
+      return false;
+    }
+    return true;
+  }
+
+  async function saveSponsor() {
+    if (!(await requireAdmin())) return;
+    await writeDoc('sponsors', 'active', {
+      ...sponsorForm,
+      active: true,
+      updatedBy: firebaseUser.uid,
+      updatedAt: serverTimestamp(),
+    });
+    Alert.alert('Sponsor saved', 'The active sponsor banner was saved to Firebase. Users will see it after the app reloads or refreshes sponsor data.');
+  }
+
+  async function saveMatchUpdate() {
+    if (!(await requireAdmin())) return;
+    const id = String(matchForm.matchId || '').trim();
+    if (!id) { Alert.alert('Missing match ID', 'Enter a match number first.'); return; }
+    await writeDoc('matches', id, {
+      matchId: id,
+      teamAScore: Number(matchForm.teamAScore || 0),
+      teamBScore: Number(matchForm.teamBScore || 0),
+      status: matchForm.status || 'upcoming',
+      updatedBy: firebaseUser.uid,
+      updatedAt: serverTimestamp(),
+    });
+    Alert.alert('Match update saved', `Match #${id} was saved to Firebase.`);
+  }
+
+  async function saveNewsItem() {
+    if (!(await requireAdmin())) return;
+    if (!newsForm.title || !newsForm.body) { Alert.alert('Missing news info', 'Enter a title and full story.'); return; }
+    const id = `news_${Date.now()}`;
+    await writeDoc('news', id, {
+      ...newsForm,
+      id,
+      active: true,
+      createdBy: firebaseUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, false);
+    setNewsForm({ title: '', source: 'Virtual Beehive Inc.', body: '', url: '' });
+    Alert.alert('News saved', 'The news item was saved to Firebase.');
+  }
+
+  async function saveImageLinks() {
+    if (!(await requireAdmin())) return;
+    const collection = imageForm.collection || 'stadiums';
+    const id = String(imageForm.docId || '').trim();
+    if (!id) { Alert.alert('Missing document ID', 'Enter a stadium/team/player document ID.'); return; }
+    await writeDoc(collection, id, {
+      imageUrl: imageForm.imageUrl || '',
+      coachImageUrl: imageForm.coachImageUrl || '',
+      playerImageUrl: imageForm.playerImageUrl || '',
+      jerseyHomeUrl: imageForm.jerseyHomeUrl || '',
+      jerseyAwayUrl: imageForm.jerseyAwayUrl || '',
+      updatedBy: firebaseUser.uid,
+      updatedAt: serverTimestamp(),
+    });
+    Alert.alert('Image links saved', `${collection}/${id} was saved to Firebase.`);
+  }
+
+  const inputStyle = [styles.input, dark ? styles.inputDark : styles.inputLight];
+
+  return (
+    <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
+      <BackHeader title="Admin Control Panel" onBack={onClose} dark={dark} />
+      <ScrollView style={{ padding: 16 }} contentContainerStyle={{ paddingBottom: 30 }}>
+        <Text style={[styles.big, { color: fg }]}>Admin Control Panel</Text>
+        <Text style={{ color: fg, marginBottom: 12 }}>Only approved admins can save changes. This panel writes to Firebase so key app content can change without rebuilding the app.</Text>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Sponsor Manager</Text>
+          <TextInput placeholder="Sponsor name" placeholderTextColor="#94a3b8" value={sponsorForm.name} onChangeText={(v)=>setSponsorForm({...sponsorForm,name:v})} style={inputStyle} />
+          <TextInput placeholder="Sponsor message" placeholderTextColor="#94a3b8" value={sponsorForm.message} onChangeText={(v)=>setSponsorForm({...sponsorForm,message:v})} style={inputStyle} />
+          <TextInput placeholder="Call to action" placeholderTextColor="#94a3b8" value={sponsorForm.callToAction} onChangeText={(v)=>setSponsorForm({...sponsorForm,callToAction:v})} style={inputStyle} />
+          <TextInput placeholder="Link URL" placeholderTextColor="#94a3b8" value={sponsorForm.linkUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,linkUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Logo URL optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <ButtonPill label="Save active sponsor" onPress={saveSponsor} color={COLORS.green} />
+        </View>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Match Manager</Text>
+          <Text style={{ color: fg, marginBottom: 8 }}>Use this for manual score/status override until the live sports API is connected.</Text>
+          <TextInput placeholder="Match ID / number" placeholderTextColor="#94a3b8" value={matchForm.matchId} onChangeText={(v)=>setMatchForm({...matchForm,matchId:v})} style={inputStyle} keyboardType="number-pad" />
+          <TextInput placeholder="Team A score" placeholderTextColor="#94a3b8" value={matchForm.teamAScore} onChangeText={(v)=>setMatchForm({...matchForm,teamAScore:v})} style={inputStyle} keyboardType="number-pad" />
+          <TextInput placeholder="Team B score" placeholderTextColor="#94a3b8" value={matchForm.teamBScore} onChangeText={(v)=>setMatchForm({...matchForm,teamBScore:v})} style={inputStyle} keyboardType="number-pad" />
+          <TextInput placeholder="Status: upcoming, live, halftime, final" placeholderTextColor="#94a3b8" value={matchForm.status} onChangeText={(v)=>setMatchForm({...matchForm,status:v})} style={inputStyle} autoCapitalize="none" />
+          <ButtonPill label="Save match update" onPress={saveMatchUpdate} color={COLORS.blue} />
+        </View>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>News Manager</Text>
+          <TextInput placeholder="News title" placeholderTextColor="#94a3b8" value={newsForm.title} onChangeText={(v)=>setNewsForm({...newsForm,title:v})} style={inputStyle} />
+          <TextInput placeholder="Source" placeholderTextColor="#94a3b8" value={newsForm.source} onChangeText={(v)=>setNewsForm({...newsForm,source:v})} style={inputStyle} />
+          <TextInput placeholder="Full news story" placeholderTextColor="#94a3b8" value={newsForm.body} onChangeText={(v)=>setNewsForm({...newsForm,body:v})} style={[...inputStyle, { minHeight: 100, textAlignVertical: 'top' }]} multiline />
+          <TextInput placeholder="Source URL optional" placeholderTextColor="#94a3b8" value={newsForm.url} onChangeText={(v)=>setNewsForm({...newsForm,url:v})} style={inputStyle} autoCapitalize="none" />
+          <ButtonPill label="Publish news item" onPress={saveNewsItem} color={COLORS.amber} />
+        </View>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL Manager</Text>
+          <Text style={{ color: fg, marginBottom: 8 }}>Add image links for stadiums, teams, coaches, players, and jerseys without uploading heavy images to Firebase Storage.</Text>
+          <TextInput placeholder="Collection: stadiums, teams, players" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Document ID, example: metlife or argentina" placeholderTextColor="#94a3b8" value={imageForm.docId} onChangeText={(v)=>setImageForm({...imageForm,docId:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Main image URL" placeholderTextColor="#94a3b8" value={imageForm.imageUrl} onChangeText={(v)=>setImageForm({...imageForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Coach image URL" placeholderTextColor="#94a3b8" value={imageForm.coachImageUrl} onChangeText={(v)=>setImageForm({...imageForm,coachImageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Player image URL" placeholderTextColor="#94a3b8" value={imageForm.playerImageUrl} onChangeText={(v)=>setImageForm({...imageForm,playerImageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Home jersey URL" placeholderTextColor="#94a3b8" value={imageForm.jerseyHomeUrl} onChangeText={(v)=>setImageForm({...imageForm,jerseyHomeUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Away jersey URL" placeholderTextColor="#94a3b8" value={imageForm.jerseyAwayUrl} onChangeText={(v)=>setImageForm({...imageForm,jerseyAwayUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <ButtonPill label="Save image links" onPress={saveImageLinks} color={COLORS.green} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, firebaseUser, onOpenSignIn, onSignOut, onOpenAdmin }) {
   const signedIn = !!firebaseUser || !!profile?.email;
   const profileName = profile?.name || 'Not signed in';
   const profileNickname = profile?.nickname || 'Not set';
@@ -709,9 +845,9 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
         {admin ? (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Hidden Admin</Text>
-            <Text style={{ color: fg }}>Visible only when your Firestore user document has isAdmin set to true. Your admin access is backend-controlled.</Text>
-            <Text style={{ color: fg }}>Sponsor Manager: Hobbee.FUN banner fields placeholder.</Text>
-            <Text style={{ color: fg }}>Match Manager: manual live score updates placeholder.</Text>
+            <Text style={{ color: fg }}>Admin access is enabled for this account.</Text>
+            <Text style={{ color: fg, marginBottom: 8 }}>Manage sponsors, news, match updates, and image URLs from Firebase.</Text>
+            <ButtonPill label="Open Admin Control Panel" onPress={onOpenAdmin} color={COLORS.green} />
           </View>
         ) : null}
       </ScrollView>
@@ -727,6 +863,7 @@ export default function App() {
   const [newsOpen, setNewsOpen] = useState(null);
   const [menu, setMenu] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [predictions, setPredictions] = useState({});
   const [bestPlayers, setBestPlayers] = useState({});
   const [champion, setChampion] = useState(null);
@@ -788,6 +925,7 @@ export default function App() {
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (adminOpen) { setAdminOpen(false); return true; }
       if (authOpen) { setAuthOpen(false); return true; }
       if (menu) { setMenu(false); return true; }
       if (newsOpen) { setNewsOpen(null); return true; }
@@ -796,7 +934,7 @@ export default function App() {
       return false;
     });
     return () => sub.remove();
-  }, [authOpen, menu, newsOpen, teamOpen, selected]);
+  }, [adminOpen, authOpen, menu, newsOpen, teamOpen, selected]);
 
   async function savePrediction(id, a, b) {
     const savedAt = new Date().toISOString();
@@ -980,7 +1118,16 @@ export default function App() {
             setTimeout(() => setAuthOpen(true), 250);
           }}
           onSignOut={handleSignOut}
+          onOpenAdmin={() => { setMenu(false); setTimeout(() => setAdminOpen(true), 250); }}
           onClose={() => setMenu(false)}
+        />
+      </Modal>
+      <Modal visible={adminOpen} animationType="slide" onRequestClose={() => setAdminOpen(false)}>
+        <AdminScreen
+          dark={dark}
+          admin={admin}
+          firebaseUser={firebaseUser}
+          onClose={() => setAdminOpen(false)}
         />
       </Modal>
       <Modal visible={authOpen} animationType="slide" onRequestClose={() => setAuthOpen(false)}>

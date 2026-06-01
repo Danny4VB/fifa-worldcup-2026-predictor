@@ -1,5 +1,4 @@
-npm install
-npx expo export --platform android --clear# Phase 2C AdMob IDs
+# Phase 2C AdMob IDs
 
 AdMob Android App ID:
 ca-app-pub-7388735966130444~1056081892
