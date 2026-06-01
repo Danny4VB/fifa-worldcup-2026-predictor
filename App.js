@@ -58,7 +58,7 @@ class ScreenErrorBoundary extends React.Component {
             <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }]}>
               <Text style={[styles.sectionTitle, { color: fg }]}>Temporary screen issue</Text>
               <Text style={{ color: fg }}>This screen was protected from crashing the app.</Text>
-              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 3D-A delete request</Text>
+              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 2S restore hotfix</Text>
             </View>
           </View>
         </SafeAreaView>
@@ -80,7 +80,7 @@ const ADMOB_AD_UNITS = {
 // For public builds, keep test ads off. Ad slots will automatically hide if AdMob has no fill.
 const USE_ADMOB_TEST_ADS = false;
 const DEFAULT_AD_SETTINGS = {
-  adsEnabled: true,
+  adsEnabled: false,
   useTestAds: USE_ADMOB_TEST_ADS,
   nonPersonalized: true,
   autoHideOnNoFill: true,
@@ -462,7 +462,7 @@ function ShareCopyRow({ message, shareLabel = 'Share', copyLabel = 'Copy text', 
   const safeMessage = safeText(message, `${APP_SHARE_NAME}\n${APP_SHARE_URL}`);
   return (
     <View style={styles.shareBox}>
-      <Text style={styles.shareHint}>Share or copy this branded message</Text>
+      <Text style={styles.shareHint}>Share to social apps or copy this branded message</Text>
       <View style={styles.shareRow}>
         <ButtonPill label={shareLabel} onPress={() => shareAppMessage(safeMessage, title)} color={COLORS.blue} />
         <ButtonPill label={copyLabel} onPress={() => copyShareMessage(safeMessage)} color={COLORS.slate} />
@@ -976,16 +976,16 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
       <BackHeader title="Sign in" onBack={onBack} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
         <Text style={[styles.big, { color: fg }]}>Account</Text>
-        <Text style={{ color: fg, marginBottom: 12 }}>Create an account or sign in to save your predictions online, keep leaderboard points, and access your profile from another device. Google and social sign-in will be added later.</Text>
+        <Text style={{ color: fg, marginBottom: 12 }}>Create an account or sign in to save your predictions, profile, and leaderboard progress. You can also continue as a guest.</Text>
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 10 }]}>Email / Password</Text>
         {['email', 'password', 'name', 'nickname', 'age', 'sex'].map((key) => (
           <TextInput key={key} placeholder={key} placeholderTextColor="#94a3b8" secureTextEntry={key === 'password'} value={p[key] || ''} onChangeText={(v) => setP({ ...p, [key]: v })} style={[styles.input, dark ? styles.inputDark : styles.inputLight]} autoCapitalize={key === 'email' ? 'none' : 'sentences'} />
         ))}
         <ButtonPill label="Detect my country" onPress={() => setP({ ...p, location: 'United States' })} color={COLORS.amber} />
         <Text style={{ color: fg, marginTop: 8 }}>Country shown publicly: {p.location}</Text>
-        <ButtonPill label="Create New Account" onPress={() => onEmailAuth(p, 'signup')} color={COLORS.green} />
-        <ButtonPill label="Sign In" onPress={() => onEmailAuth(p, 'signin')} color={COLORS.blue} />
-        <ButtonPill label="Save profile locally only" onPress={() => onSave(p)} color="#64748b" />
+        <ButtonPill label="Create account" onPress={() => onEmailAuth(p, 'signup')} color={COLORS.green} />
+        <ButtonPill label="Sign in" onPress={() => onEmailAuth(p, 'signin')} color={COLORS.blue} />
+        <ButtonPill label="Continue as guest" onPress={() => onSave(p)} color="#64748b" />
       </ScrollView>
     </SafeAreaView>
   );
@@ -1346,7 +1346,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
-          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 3D-A delete request</Text>
+          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 2S restore hotfix</Text>
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
@@ -1374,7 +1374,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Hidden Admin</Text>
             <Text style={{ color: fg }}>Admin access is enabled for this account.</Text>
-            <Text style={{ color: fg, marginBottom: 8 }}>Manage sponsors, news, match updates, and image URLs from Firebase.</Text>
+            <Text style={{ color: fg, marginBottom: 8 }}>Tap the button below to open the admin tools. A quick admin button also appears on the main screen while you are signed in as admin.</Text>
             <ButtonPill label="Open Admin Control Panel" onPress={onOpenAdmin} color={COLORS.green} />
           </View>
         ) : null}
@@ -1624,6 +1624,11 @@ export default function App() {
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Header dark={dark} fg={fg} setDark={setDark} setMenu={setMenu} />
       <SponsorBanner dark={dark} sponsor={sponsor} />
+      {admin ? (
+        <TouchableOpacity onPress={() => setAdminOpen(true)} style={{ marginHorizontal: 14, marginTop: 8, marginBottom: 4, padding: 12, borderRadius: 14, backgroundColor: COLORS.green, alignItems: 'center' }}>
+          <Text style={{ color: '#000000', fontWeight: '900' }}>Open Admin Control Panel</Text>
+        </TouchableOpacity>
+      ) : null}
       <View style={{ flex: 1 }}>
         {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} adSettings={adSettings} />}
         {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} adSettings={adSettings} profile={profile} />}
@@ -1677,7 +1682,10 @@ export default function App() {
           currentProfile={profile || {}}
           onEmailAuth={async (p, mode) => {
             const ok = await handleEmailAuth(p, mode);
-            if (ok) setAuthOpen(false);
+            if (ok) {
+              setAuthOpen(false);
+              setTimeout(() => setMenu(true), 350);
+            }
           }}
           onBack={() => setAuthOpen(false)}
           onSave={async (p) => {
