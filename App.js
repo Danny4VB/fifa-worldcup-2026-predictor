@@ -4,6 +4,7 @@ import {
   Animated,
   BackHandler,
   Image,
+  Linking,
   Modal,
   SafeAreaView,
   ScrollView,
@@ -57,7 +58,7 @@ class ScreenErrorBoundary extends React.Component {
             <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }]}>
               <Text style={[styles.sectionTitle, { color: fg }]}>Temporary screen issue</Text>
               <Text style={{ color: fg }}>This screen was protected from crashing the app.</Text>
-              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 2R hotfix</Text>
+              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 3D-A delete request</Text>
             </View>
           </View>
         </SafeAreaView>
@@ -123,6 +124,38 @@ const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
 const APP_SHARE_URL = 'https://hobbee.fun';
 const APP_BRAND_LINE = 'By Virtual Beehive Inc., creators of Hobbee.FUN — the only hobby-specific social media platform.';
 const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN';
+const PRIVACY_POLICY_URL = 'https://hobbee.fun/worldcup-predictor-privacy-policy';
+const TERMS_URL = 'https://hobbee.fun/worldcup-predictor-terms';
+const DELETE_ACCOUNT_URL = 'https://hobbee.fun/worldcup-predictor-delete-account';
+const SUPPORT_EMAIL = 'danny@virtualbeehiveinc.com';
+
+async function openExternalUrl(url) {
+  try {
+    const can = await Linking.canOpenURL(url);
+    if (can) await Linking.openURL(url);
+    else Alert.alert('Unable to open link', url);
+  } catch (e) {
+    Alert.alert('Unable to open link', e?.message || 'Please try again later.');
+  }
+}
+
+function deleteAccountRequestMessage(profile = {}) {
+  const email = safeText(profile?.email, 'the email used for my app account');
+  const nickname = safeText(profile?.nickname || profile?.name, 'my account');
+  return `Please delete my FIFA WorldCup 2026 Predictor account and associated app data.
+
+Account email: ${email}
+Name or nickname: ${nickname}
+
+I understand this request may delete or anonymize my email, name, nickname, profile details, predictions, champion pick, best-player votes, and leaderboard records connected to my account.`;
+}
+
+async function emailDeleteRequest(profile = {}) {
+  const subject = encodeURIComponent('Delete My FIFA WorldCup 2026 Predictor Account');
+  const body = encodeURIComponent(deleteAccountRequestMessage(profile));
+  await openExternalUrl(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
+}
+
 
 function brandedShareFooter() {
   return `${APP_SHARE_NAME}
@@ -1313,7 +1346,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
-          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 2R hotfix</Text>
+          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 3D-A delete request</Text>
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
@@ -1321,12 +1354,21 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <ShareCopyRow message={inviteMessage} shareLabel="Share app invite" copyLabel="Copy invite text" title="Invite friends" />
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy Policy</Text>
-          <Text style={{ color: fg }}>We do not sell user data. Leaderboard shows nickname and profile image only when a user has correct predictions.</Text>
-          <Text style={[styles.sectionTitle, { color: fg, marginTop: 12 }]}>Terms of Use</Text>
-          <Text style={{ color: fg }}>Predictions are for entertainment. Score predictions lock after halftime or when match is finished. Best-player voting can happen before or after the game.</Text>
-          <Text style={[styles.sectionTitle, { color: fg, marginTop: 12 }]}>Delete Account</Text>
-          <ButtonPill label="Delete local account data" onPress={() => saveProfile({})} color={COLORS.red} />
+          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Legal</Text>
+          <Text style={{ color: fg }}>Review how FIFA WorldCup 2026 Predictor handles account data, predictions, ads, leaderboard activity, and deletion requests.</Text>
+          <ButtonPill label="Open Privacy Policy" onPress={() => openExternalUrl(PRIVACY_POLICY_URL)} color={COLORS.blue} />
+          <ButtonPill label="Open Terms of Use" onPress={() => openExternalUrl(TERMS_URL)} color={COLORS.amber} />
+        </View>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Delete Account / Data Request</Text>
+          <Text style={{ color: fg, lineHeight: 21 }}>
+            You can request deletion of your FIFA WorldCup 2026 Predictor account and related app data. This may include your email, name, nickname, profile details, predictions, votes, champion pick, and leaderboard records connected to your account.
+          </Text>
+          <ButtonPill label="Open Delete Account Page" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
+          <ButtonPill label="Email Deletion Request" onPress={() => emailDeleteRequest(safeProfile)} color={COLORS.amber} />
+          <ButtonPill label="Copy Deletion Request Text" onPress={() => copyShareMessage(deleteAccountRequestMessage(safeProfile))} color={COLORS.blue} />
+          <ButtonPill label="Clear local profile on this phone" onPress={() => saveProfile({})} color="#64748b" />
         </View>
         {admin ? (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
