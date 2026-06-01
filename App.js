@@ -563,45 +563,136 @@ function TeamCompare({ a, b, dark, setTeamOpen }) {
   );
 }
 
+const ROUND_32_LEFT = [
+  { slot: '1E', helper: 'vs 3rd place', flags: ['Germany', 'Curacao', 'Cote d Ivoire', 'Ecuador'] },
+  { slot: '1I', helper: 'vs 3rd place', flags: ['France', 'Senegal', 'Iraq', 'Norway'] },
+  { slot: '2A vs 2B', helper: 'runner-up path', flags: ['Mexico', 'South Africa', 'Canada', 'Switzerland'] },
+  { slot: '1F vs 2C', helper: 'group winner path', flags: ['Netherlands', 'Brazil', 'Morocco'] },
+  { slot: '2K vs 2L', helper: 'runner-up path', flags: ['Portugal', 'Colombia', 'England', 'Croatia'] },
+  { slot: '1H vs 2J', helper: 'group winner path', flags: ['Spain', 'Uruguay', 'Argentina'] },
+  { slot: '1D', helper: 'vs 3rd place', flags: ['USA', 'Paraguay', 'Australia', 'Turkiye'] },
+  { slot: '1G', helper: 'vs 3rd place', flags: ['Belgium', 'Egypt', 'IR Iran', 'New Zealand'] },
+];
+
+const ROUND_32_RIGHT = [
+  { slot: '1C vs 2F', helper: 'group winner path', flags: ['Brazil', 'Morocco', 'Netherlands', 'Japan'] },
+  { slot: '2E vs 2I', helper: 'runner-up path', flags: ['Germany', 'Ecuador', 'France', 'Senegal'] },
+  { slot: '1A', helper: 'vs 3rd place', flags: ['Mexico', 'South Africa', 'Korea Republic', 'Czechia'] },
+  { slot: '1L', helper: 'vs 3rd place', flags: ['England', 'Croatia', 'Ghana', 'Panama'] },
+  { slot: '1J vs 2H', helper: 'group winner path', flags: ['Argentina', 'Algeria', 'Spain', 'Uruguay'] },
+  { slot: '2D vs 2G', helper: 'runner-up path', flags: ['USA', 'Australia', 'Belgium', 'Egypt'] },
+  { slot: '1B', helper: 'vs 3rd place', flags: ['Canada', 'Qatar', 'Switzerland'] },
+  { slot: '1K', helper: 'vs 3rd place', flags: ['Portugal', 'Uzbekistan', 'Colombia'] },
+];
+
+function BracketSlot({ item, fg }) {
+  return (
+    <View style={styles.bracketSlotCard}>
+      <Text style={styles.bracketSlotTitle}>{item.slot}</Text>
+      <View style={styles.bracketFlagRow}>
+        {item.flags.slice(0, 4).map((team) => (
+          <Text key={team} style={styles.bracketFlag}>{FLAGS[team] || '🏳️'}</Text>
+        ))}
+      </View>
+      <Text style={[styles.bracketHelper, { color: fg }]}>{item.helper}</Text>
+    </View>
+  );
+}
+
+function MiniRoundColumn({ title, items, fg }) {
+  return (
+    <View style={styles.bracketColumn}>
+      <Text style={styles.bracketColumnTitle}>{title}</Text>
+      {items.map((item, index) => <BracketSlot key={`${item.slot}-${index}`} item={item} fg={fg} />)}
+    </View>
+  );
+}
+
 function KnockoutBracket({ dark, fg }) {
-  const left = ['1E vs 3-', '1I vs 3-', '2A vs 2B', '1F vs 2C', '2K vs 2L', '1H vs 2J', '1D vs 3-', '1G vs 3-'];
-  const right = ['1C vs 2F', '2E vs 2I', '1A vs 3-', '1L vs 3-', '1J vs 2H', '2D vs 2G', '1B vs 3-', '1K vs 3-'];
+  const quarterLeft = ['W49', 'W50', 'W51', 'W52'];
+  const quarterRight = ['W53', 'W54', 'W55', 'W56'];
+  const semiLeft = ['QF 1', 'QF 2'];
+  const semiRight = ['QF 3', 'QF 4'];
   return (
     <View style={[styles.bracketBox, dark ? styles.cardDark : styles.cardLight]}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Knockout map</Text>
-      <Text style={{ color: fg, marginBottom: 8 }}>Active teams remain colorful. Eliminated teams will gray out when live/backend updates are connected.</Text>
-      <View style={styles.bracketRow}>
-        <View style={styles.bracketSide}>{left.map((m) => <Text key={m} style={styles.bracketMatch}>{m}</Text>)}</View>
-        <View style={styles.trophyCenter}><Text style={{ fontSize: 58 }}>🏆</Text><Text style={{ color: COLORS.amber, fontWeight: '900', textAlign: 'center' }}>FIFA 2026</Text></View>
-        <View style={styles.bracketSide}>{right.map((m) => <Text key={m} style={styles.bracketMatch}>{m}</Text>)}</View>
-      </View>
+      <Text style={{ color: fg, marginBottom: 10 }}>
+        Phase 2J makes the knockout map visible now. Flags stay colorful for active teams; future backend/admin results can gray out eliminated teams and advance winners automatically.
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bracketLandscape}>
+        <MiniRoundColumn title="Round of 32" items={ROUND_32_LEFT} fg={fg} />
+        <View style={styles.bracketConnectorColumn}>{quarterLeft.map((x) => <Text key={x} style={styles.bracketAdvance}>{x}</Text>)}</View>
+        <View style={styles.bracketConnectorColumn}>{semiLeft.map((x) => <Text key={x} style={[styles.bracketAdvance, styles.bracketAdvanceTall]}>{x}</Text>)}</View>
+        <View style={styles.trophyCenterLarge}>
+          <Text style={{ fontSize: 78 }}>🏆</Text>
+          <Text style={styles.trophyText}>WorldCup 2026</Text>
+          <Text style={styles.trophySub}>Final</Text>
+          <View style={styles.finalCupLine} />
+          <Text style={styles.trophySub}>Champion</Text>
+        </View>
+        <View style={styles.bracketConnectorColumn}>{semiRight.map((x) => <Text key={x} style={[styles.bracketAdvance, styles.bracketAdvanceTall]}>{x}</Text>)}</View>
+        <View style={styles.bracketConnectorColumn}>{quarterRight.map((x) => <Text key={x} style={styles.bracketAdvance}>{x}</Text>)}</View>
+        <MiniRoundColumn title="Round of 32" items={ROUND_32_RIGHT} fg={fg} />
+      </ScrollView>
+    </View>
+  );
+}
+
+function GroupTableCard({ group, teams, fg, dark, champion, chooseChampion, setTeamOpen }) {
+  return (
+    <View style={[styles.groupBox, dark ? styles.cardDark : styles.cardLight]}>
+      <Text style={styles.groupHeader}>Group {group}</Text>
+      {teams.map((team, index) => {
+        const isChampion = champion === team;
+        const seedLabel = index < 2 ? `Seed ${index + 1}` : 'Group team';
+        return (
+          <TouchableOpacity
+            key={team}
+            onPress={() => chooseChampion(team)}
+            onLongPress={() => setTeamOpen(team)}
+            style={[styles.groupTeamRow, isChampion && styles.groupTeamSelected]}
+          >
+            <Text style={{ fontSize: 22 }}>{FLAGS[team]}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '900', color: fg }}>{team}</Text>
+              <Text style={{ color: dark ? '#94a3b8' : '#64748b', fontSize: 11 }}>{seedLabel} • tap to pick champion • long press for team info</Text>
+            </View>
+            {isChampion && <Text style={styles.championBadge}>★</Text>}
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 
 function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings }) {
+  const groupEntries = Object.entries(GROUPS);
   return (
     <ScrollView style={{ padding: 12 }}>
-      <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }]}>
+      <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }] }>
         <Text style={[styles.big, { color: fg }]}>Pick Your Champion</Text>
         <Text style={{ color: fg }}>Choose once. After confirmation, it is locked.</Text>
         <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>{champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}</Text>
       </View>
-      <Text style={[styles.sectionTitle, { color: fg }]}>FIFA World Cup 2026 groups</Text>
-      {Object.entries(GROUPS).map(([group, arr], index) => (
-        <View key={group}>
-          <View style={[styles.groupBox, dark ? styles.cardDark : styles.cardLight]}>
-            <Text style={styles.groupHeader}>Group {group}</Text>
-            {arr.map((team) => (
-              <TouchableOpacity key={team} onPress={() => chooseChampion(team)} onLongPress={() => setTeamOpen(team)} style={styles.groupTeamRow}>
-                <Text style={{ fontSize: 18 }}>{FLAGS[team]}</Text>
-                <Text style={{ fontWeight: '900', color: fg }}>{team}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="groups" adSettings={adSettings} />}
-        </View>
-      ))}
+
+      <Text style={[styles.sectionTitle, { color: fg }]}>Groups</Text>
+      <Text style={{ color: fg, marginBottom: 10 }}>Group teams are shown first, then the knockout map appears below just like a tournament board.</Text>
+      <View style={styles.groupGrid}>
+        {groupEntries.map(([group, arr]) => (
+          <GroupTableCard
+            key={group}
+            group={group}
+            teams={arr}
+            fg={fg}
+            dark={dark}
+            champion={champion}
+            chooseChampion={chooseChampion}
+            setTeamOpen={setTeamOpen}
+          />
+        ))}
+      </View>
+
+      <AdBox dark={dark} tone={2} placement="groups" adSettings={adSettings} />
       <KnockoutBracket dark={dark} fg={fg} />
     </ScrollView>
   );
@@ -1463,10 +1554,28 @@ const styles = StyleSheet.create({
   playerMini: { marginTop: 8, padding: 8, borderWidth: 1, borderColor: COLORS.slate, borderRadius: 12 },
   playerCard: { flexDirection: 'row', gap: 12, borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1 },
   fullPlayerPhoto: { width: 86, minHeight: 150, borderRadius: 16, backgroundColor: '#020617', alignItems: 'center', justifyContent: 'center' },
-  groupBox: { borderRadius: 16, padding: 12, marginBottom: 10, borderWidth: 1 },
+  groupGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
+  groupBox: { width: '48.5%', borderRadius: 16, padding: 10, marginBottom: 10, borderWidth: 1 },
   groupHeader: { backgroundColor: '#064e3b', color: '#ffffff', fontWeight: '900', padding: 6, borderRadius: 8, marginBottom: 6, textAlign: 'center' },
-  groupTeamRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+  groupTeamRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, borderRadius: 10, paddingHorizontal: 4 },
+  groupTeamSelected: { backgroundColor: '#fbbf2422', borderWidth: 1, borderColor: COLORS.amber },
+  championBadge: { color: COLORS.amber, fontSize: 18, fontWeight: '900' },
   bracketBox: { borderRadius: 18, padding: 12, marginBottom: 18, borderWidth: 1 },
+  bracketLandscape: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 2, gap: 8 },
+  bracketColumn: { width: 150, gap: 6 },
+  bracketColumnTitle: { color: COLORS.amber, fontWeight: '900', textAlign: 'center', marginBottom: 4 },
+  bracketSlotCard: { backgroundColor: '#064e3b', borderRadius: 10, padding: 7, minHeight: 58, borderWidth: 1, borderColor: '#16a34a' },
+  bracketSlotTitle: { color: '#ffffff', fontWeight: '900', fontSize: 12 },
+  bracketFlagRow: { flexDirection: 'row', gap: 2, marginVertical: 3, flexWrap: 'wrap' },
+  bracketFlag: { fontSize: 16 },
+  bracketHelper: { fontSize: 9, opacity: 0.82 },
+  bracketConnectorColumn: { width: 86, gap: 28, alignItems: 'center', justifyContent: 'center' },
+  bracketAdvance: { backgroundColor: '#0f172a', color: '#ffffff', fontWeight: '900', borderRadius: 10, paddingVertical: 9, paddingHorizontal: 8, borderWidth: 1, borderColor: COLORS.slate, textAlign: 'center', minWidth: 66 },
+  bracketAdvanceTall: { paddingVertical: 24, borderColor: COLORS.amber },
+  trophyCenterLarge: { width: 130, minHeight: 210, borderRadius: 22, backgroundColor: '#020617', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.amber, padding: 10 },
+  trophyText: { color: COLORS.amber, fontWeight: '900', textAlign: 'center' },
+  trophySub: { color: '#e2e8f0', fontSize: 11, fontWeight: '800', textAlign: 'center' },
+  finalCupLine: { width: 54, height: 2, backgroundColor: COLORS.amber, marginVertical: 8 },
   bracketRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bracketSide: { flex: 1, gap: 6 },
   bracketMatch: { backgroundColor: '#064e3b', color: '#ffffff', fontWeight: '900', paddingVertical: 5, paddingHorizontal: 6, borderRadius: 6, fontSize: 11 },
