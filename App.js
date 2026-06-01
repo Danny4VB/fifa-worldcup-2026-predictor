@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  BackHandler,
   Image,
   Modal,
   SafeAreaView,
@@ -23,7 +24,9 @@ const COLORS = {
   amber: '#fbbf24',
   green: '#22c55e',
   blue: '#38bdf8',
+  red: '#ef4444',
   slate: '#334155',
+  soft: '#1e293b',
 };
 
 const GROUPS = {
@@ -75,8 +78,11 @@ const TEAM_DETAILS = Object.fromEntries(
   Object.values(GROUPS).flat().map((team, index) => [
     team,
     {
-      description: `${team} enters the 2026 tournament with its own football history, national fan energy, and a chance to surprise the world. This section can later be edited from the admin dashboard.`,
+      coach: `${team} Coach`,
+      description: `${team} enters the 2026 tournament with national pride, tactical identity, and a chance to create a memorable World Cup story. This section can later be edited from the admin dashboard or backend.`,
       achievements: ['World Cup participation', 'International tournament experience', 'National team development'],
+      homeJersey: index % 2 === 0 ? '#ffffff' : '#0f172a',
+      awayJersey: index % 3 === 0 ? COLORS.amber : COLORS.blue,
       players: Array.from({ length: 11 }, (_, i) => ({
         number: i + 1,
         name: `${team} Player ${i + 1}`,
@@ -86,7 +92,7 @@ const TEAM_DETAILS = Object.fromEntries(
         education: 'Professional football academy',
         languages: 'Native language, English',
         achievements: 'National team selection',
-        photo: i % 3 === 0 ? '⚽' : '👤',
+        photo: i % 4 === 0 ? '🧍‍♂️' : i % 4 === 1 ? '🏃‍♂️' : i % 4 === 2 ? '⚽' : '🧤',
       })),
     },
   ])
@@ -101,7 +107,7 @@ TEAM_DETAILS.Argentina.players[9] = {
   education: 'Professional football academy',
   languages: 'Spanish, English',
   achievements: 'World champion, Ballon d Or winner',
-  photo: '⭐',
+  photo: '🧍‍♂️',
 };
 TEAM_DETAILS.USA.players[9] = {
   number: 10,
@@ -112,7 +118,7 @@ TEAM_DETAILS.USA.players[9] = {
   education: 'Professional football academy',
   languages: 'English',
   achievements: 'National team player',
-  photo: '🇺🇸',
+  photo: '🏃‍♂️',
 };
 
 function buildFixtures() {
@@ -141,14 +147,7 @@ function buildFixtures() {
       if (pIndex % 2 === 1) day += 1;
     });
   });
-  const knockoutStages = [
-    ['Round of 32', 16],
-    ['Round of 16', 8],
-    ['Quarterfinal', 4],
-    ['Semifinal', 2],
-    ['Third Place', 1],
-    ['Final', 1],
-  ];
+  const knockoutStages = [['Round of 32', 16], ['Round of 16', 8], ['Quarterfinal', 4], ['Semifinal', 2], ['Third Place', 1], ['Final', 1]];
   knockoutStages.forEach(([stage, count]) => {
     for (let i = 0; i < count; i += 1) {
       const venue = STADIUMS[(id - 1) % STADIUMS.length];
@@ -174,20 +173,9 @@ function buildFixtures() {
 const FIXTURES = buildFixtures();
 
 const NEWS = [
-  {
-    id: 1,
-    title: 'World Cup 2026 tournament schedule is set',
-    source: 'FIFA',
-    date: '2026',
-    body: 'The 2026 tournament features 48 teams, 12 groups, and 104 matches. This app shows a Phase 2A local fixture and prediction experience. Full live data can be connected in Phase 2B.',
-  },
-  {
-    id: 2,
-    title: 'Fans can start preparing predictions',
-    source: 'Virtual Beehive Inc.',
-    date: '2026',
-    body: 'Users can select matches, make score predictions, and choose a champion once. In this local preview, predictions are saved on the phone.',
-  },
+  { id: 1, title: 'World Cup 2026 tournament schedule is set', source: 'FIFA', date: '2026', body: 'The 2026 tournament features 48 teams, 12 groups, and 104 matches. This Phase 2A app shows a local fixture and prediction experience. Full live data can be connected in Phase 2B.' },
+  { id: 2, title: 'Fans can start preparing predictions', source: 'Virtual Beehive Inc.', date: '2026', body: 'Users can select matches, make score predictions, choose a champion once, and select a best player of the game. In this local preview, predictions are saved on the phone.' },
+  { id: 3, title: 'Sponsor banner ready for Hobbee.FUN', source: 'Virtual Beehive Inc.', date: '2026', body: 'The sponsor banner is built as a moving banner and can later be controlled from the hidden admin tools or backend sponsor manager.' },
 ];
 
 function fmtDate(iso) {
@@ -226,12 +214,24 @@ function ButtonPill({ label, onPress, disabled, color }) {
   );
 }
 
+function BackHeader({ title, onBack, dark }) {
+  const fg = dark ? '#ffffff' : '#0f172a';
+  return (
+    <View style={[styles.backHeader, dark ? { backgroundColor: '#0f172a' } : { backgroundColor: '#ffffff' }]}>
+      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <Text style={{ color: '#000000', fontWeight: '900' }}>‹ Back</Text>
+      </TouchableOpacity>
+      <Text style={[styles.headerTitle, { color: fg }]} numberOfLines={1}>{title}</Text>
+    </View>
+  );
+}
+
 function SponsorBanner({ dark }) {
   const x = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(x, { toValue: -420, duration: 9000, useNativeDriver: true }),
+        Animated.timing(x, { toValue: -430, duration: 9500, useNativeDriver: true }),
         Animated.timing(x, { toValue: 0, duration: 0, useNativeDriver: true }),
       ])
     );
@@ -240,15 +240,17 @@ function SponsorBanner({ dark }) {
   }, [x]);
   return (
     <View style={[styles.sponsor, dark ? styles.cardDark : styles.cardLight]}>
-      <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]}>🐝 Sponsored by Hobbee.FUN   •   Visit Hobbee.FUN   •   Sponsor banner can be changed from hidden admin later   •</Animated.Text>
+      <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]}>🐝 Hobbee.FUN   •   Sponsored section   •   Visit Hobbee.FUN   •   Sponsor can be changed from hidden admin later   •</Animated.Text>
     </View>
   );
 }
 
-function AdBox({ dark }) {
+function AdBox({ dark, tone = 0 }) {
+  const backgrounds = dark ? ['#0b1220', '#111827', '#172033'] : ['#f1f5f9', '#fff7ed', '#ecfeff'];
+  const borders = dark ? ['#334155', '#475569', '#14532d'] : ['#cbd5e1', '#fed7aa', '#a5f3fc'];
   return (
-    <View style={[styles.adBox, dark ? { borderColor: COLORS.slate } : { borderColor: '#cbd5e1' }] }>
-      <Text style={{ color: dark ? '#94a3b8' : '#475569' }}>Advertisement</Text>
+    <View style={[styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }]}>
+      <Text style={{ color: dark ? '#94a3b8' : '#475569', fontWeight: '700' }}>Advertisement</Text>
     </View>
   );
 }
@@ -265,7 +267,7 @@ function Header({ dark, fg, setDark, setMenu }) {
         <Text style={{ fontSize: 22 }}>{dark ? '☀️' : '🌙'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => setMenu(true)} style={styles.iconBtn}>
-        <Text style={{ fontSize: 26, color: fg }}>☰</Text>
+        <Text style={{ fontSize: 28, color: fg }}>☰</Text>
       </TouchableOpacity>
     </View>
   );
@@ -276,22 +278,25 @@ function Matches({ dark, fg, predictions, setSelected }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.big, { color: fg }]}>Matches</Text>
       <Text style={{ color: fg, marginBottom: 8 }}>All 104 tournament matches are listed. Tap any match to predict before halftime.</Text>
-      <AdBox dark={dark} />
-      {FIXTURES.map((match) => {
+      <AdBox dark={dark} tone={0} />
+      {FIXTURES.map((match, index) => {
         const st = matchStatus(match);
         const key = String(match.id);
         const pred = predictions[key];
         return (
-          <TouchableOpacity key={match.id} onPress={() => setSelected(match)} style={[styles.matchCard, dark ? styles.cardDark : styles.cardLight]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
-              <Text style={{ color: st.color, fontWeight: '900' }}>#{match.matchNo} {st.label}</Text>
-              <Text style={{ color: fg }}>{fmtDate(match.dateTime)}</Text>
-            </View>
-            <Text style={[styles.matchTeams, { color: fg }]}>{FLAGS[match.teamA] || '🏳️'} {match.teamA}  vs  {FLAGS[match.teamB] || '🏳️'} {match.teamB}</Text>
-            <Text style={{ color: fg }}>{match.stage} {match.group ? `• Group ${match.group}` : ''}</Text>
-            <Text style={{ color: fg }}>{match.stadium} • {match.city}</Text>
-            {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
-          </TouchableOpacity>
+          <View key={match.id}>
+            <TouchableOpacity onPress={() => setSelected(match)} style={[styles.matchCard, dark ? styles.cardDark : styles.cardLight]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
+                <Text style={{ color: st.color, fontWeight: '900' }}>#{match.matchNo} {st.label}</Text>
+                <Text style={{ color: fg }}>{fmtDate(match.dateTime)}</Text>
+              </View>
+              <Text style={[styles.matchTeams, { color: fg }]}>{FLAGS[match.teamA] || '🏳️'} {match.teamA}  vs  {FLAGS[match.teamB] || '🏳️'} {match.teamB}</Text>
+              <Text style={{ color: fg }}>{match.stage} {match.group ? `• Group ${match.group}` : ''}</Text>
+              <Text style={{ color: fg }}>{match.stadium} • {match.city}</Text>
+              {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
+            </TouchableOpacity>
+            {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} />}
+          </View>
         );
       })}
     </ScrollView>
@@ -311,19 +316,33 @@ function ScoreStepper({ label, value, setValue, disabled }) {
   );
 }
 
-function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen }) {
+function StadiumCard({ match, dark, fg }) {
+  return (
+    <View style={[styles.stadiumHero, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#e2e8f0' }]}>
+      <Text style={styles.stadiumEmoji}>🏟️</Text>
+      <View style={styles.stadiumOverlay}>
+        <Text style={styles.stadiumTitle}>{match.stadium}</Text>
+        <Text style={styles.stadiumText}>{match.city}, {match.state} • {match.country}</Text>
+        <Text style={styles.stadiumText}>Capacity: {match.capacity}</Text>
+        <Text style={styles.stadiumText}>Ticket range: {match.ticketRange}</Text>
+      </View>
+    </View>
+  );
+}
+
+function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, saveBestPlayer }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   const [tab, setTab] = useState('summary');
   const saved = predictions[String(match.id)] || { a: 0, b: 0 };
   const [a, setA] = useState(saved.a);
   const [b, setB] = useState(saved.b);
+  const selectedBest = bestPlayers[String(match.id)];
   const status = matchStatus(match);
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
-      <View style={{ padding: 12 }}>
-        <ButtonPill label="Back to matches" onPress={onClose} color={COLORS.slate} />
-      </View>
+      <BackHeader title={`${match.teamA} vs ${match.teamB}`} onBack={onClose} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
+        <StadiumCard match={match} dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: status.color }] }>
           <Text style={{ color: status.color, fontWeight: '900' }}>{status.label}</Text>
           <Text style={[styles.big, { color: fg }]}>{match.teamA} vs {match.teamB}</Text>
@@ -344,6 +363,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <Text style={styles.blackScore}>{match.teamA} {match.liveScore[0]} - {match.liveScore[1]} {match.teamB}</Text>
           </View>
         </View>
+        <AdBox dark={dark} tone={1} />
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
           {['summary', 'compare', 'head'].map((t) => (
             <ButtonPill key={t} label={t === 'summary' ? 'Summary' : t === 'compare' ? 'Teams' : 'History'} onPress={() => setTab(t)} color={tab === t ? COLORS.amber : COLORS.slate} />
@@ -351,13 +371,21 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
         </View>
         {tab === 'summary' && (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.sectionTitle, { color: fg }]}>Match location</Text>
+            <Text style={[styles.sectionTitle, { color: fg }]}>Best player of the game</Text>
+            <Text style={{ color: fg }}>Choose anytime before or after the match.</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+              {[...((TEAM_DETAILS[match.teamA] || {}).players || []), ...((TEAM_DETAILS[match.teamB] || {}).players || [])].slice(0, 10).map((p) => (
+                <TouchableOpacity key={`${p.name}-${p.number}`} onPress={() => saveBestPlayer(match.id, p.name)} style={[styles.bestPlayerPill, selectedBest === p.name && { backgroundColor: COLORS.green }]}>
+                  <Text style={{ fontWeight: '900', color: selectedBest === p.name ? '#000' : fg }}>#{p.number} {p.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.sectionTitle, { color: fg, marginTop: 16 }]}>Match location</Text>
             <Text style={{ color: fg }}>Stadium: {match.stadium}</Text>
             <Text style={{ color: fg }}>City/State: {match.city}, {match.state}</Text>
             <Text style={{ color: fg }}>Country: {match.country}</Text>
             <Text style={{ color: fg }}>Capacity: {match.capacity}</Text>
             <Text style={{ color: fg }}>Ticket range: {match.ticketRange}</Text>
-            <AdBox dark={dark} />
           </View>
         )}
         {tab === 'compare' && <TeamCompare a={match.teamA} b={match.teamB} dark={dark} setTeamOpen={setTeamOpen} />}
@@ -365,10 +393,35 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Previous matches</Text>
             <Text style={{ color: fg }}>{match.previous}</Text>
+            <AdBox dark={dark} tone={2} />
           </View>
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Jersey({ color, label }) {
+  return (
+    <View style={styles.jerseyWrap}>
+      <View style={[styles.jersey, { backgroundColor: color }]}>
+        <Text style={{ fontSize: 22 }}>👕</Text>
+      </View>
+      <Text style={styles.jerseyLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function CoachCard({ team, dark, fg }) {
+  const d = TEAM_DETAILS[team] || {};
+  return (
+    <View style={[styles.coachCard, dark ? { backgroundColor: '#020617' } : { backgroundColor: '#f1f5f9' }]}>
+      <Text style={{ fontSize: 34 }}>🧑‍💼</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: fg, fontWeight: '900' }}>{d.coach || `${team} Coach`}</Text>
+        <Text style={{ color: fg, fontSize: 12 }}>Head coach passport photo placeholder</Text>
+      </View>
+    </View>
   );
 }
 
@@ -383,11 +436,17 @@ function TeamCompare({ a, b, dark, setTeamOpen }) {
             <TouchableOpacity key={team} onPress={() => setTeamOpen(team)} style={{ flex: 1 }}>
               <Text style={{ fontSize: 28, textAlign: 'center' }}>{FLAGS[team]}</Text>
               <Text style={[styles.sectionTitle, { color: fg, textAlign: 'center' }]}>{team}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+                <Jersey color={d.homeJersey || '#fff'} label="Home" />
+                <Jersey color={d.awayJersey || COLORS.blue} label="Away" />
+              </View>
+              <CoachCard team={team} dark={dark} fg={fg} />
               <Text style={{ color: fg, fontSize: 12 }}>{d.description}</Text>
               <Text style={{ color: COLORS.amber, fontWeight: '900', marginTop: 8 }}>Achievements</Text>
               {d.achievements.map((x) => <Text key={x} style={{ color: fg, fontSize: 12 }}>• {x}</Text>)}
-              {d.players.slice(0, 5).map((p) => (
+              {d.players.slice(0, 4).map((p) => (
                 <View key={p.number} style={styles.playerMini}>
+                  <Text style={{ fontSize: 32, textAlign: 'center' }}>{p.photo}</Text>
                   <Text style={{ color: fg, fontWeight: '900' }}>#{p.number} {p.name}</Text>
                   <Text style={{ color: fg, fontSize: 11 }}>{p.position} • {p.height} • {p.weight}</Text>
                 </View>
@@ -400,35 +459,46 @@ function TeamCompare({ a, b, dark, setTeamOpen }) {
   );
 }
 
+function KnockoutBracket({ dark, fg }) {
+  const left = ['1E vs 3-', '1I vs 3-', '2A vs 2B', '1F vs 2C', '2K vs 2L', '1H vs 2J', '1D vs 3-', '1G vs 3-'];
+  const right = ['1C vs 2F', '2E vs 2I', '1A vs 3-', '1L vs 3-', '1J vs 2H', '2D vs 2G', '1B vs 3-', '1K vs 3-'];
+  return (
+    <View style={[styles.bracketBox, dark ? styles.cardDark : styles.cardLight]}>
+      <Text style={[styles.sectionTitle, { color: fg }]}>Knockout map</Text>
+      <Text style={{ color: fg, marginBottom: 8 }}>Active teams remain colorful. Eliminated teams will gray out when live/backend updates are connected.</Text>
+      <View style={styles.bracketRow}>
+        <View style={styles.bracketSide}>{left.map((m) => <Text key={m} style={styles.bracketMatch}>{m}</Text>)}</View>
+        <View style={styles.trophyCenter}><Text style={{ fontSize: 58 }}>🏆</Text><Text style={{ color: COLORS.amber, fontWeight: '900', textAlign: 'center' }}>FIFA 2026</Text></View>
+        <View style={styles.bracketSide}>{right.map((m) => <Text key={m} style={styles.bracketMatch}>{m}</Text>)}</View>
+      </View>
+    </View>
+  );
+}
+
 function Groups({ dark, fg, champion, chooseChampion, setTeamOpen }) {
   return (
     <ScrollView style={{ padding: 12 }}>
       <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }]}>
         <Text style={[styles.big, { color: fg }]}>Pick Your Champion</Text>
         <Text style={{ color: fg }}>Choose once. After confirmation, it is locked.</Text>
-        <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>
-          {champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}
-        </Text>
+        <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>{champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}</Text>
       </View>
       <Text style={[styles.sectionTitle, { color: fg }]}>FIFA World Cup 2026 groups</Text>
-      {Object.entries(GROUPS).map(([group, arr]) => (
-        <View key={group} style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Group {group}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {Object.entries(GROUPS).map(([group, arr], index) => (
+        <View key={group}>
+          <View style={[styles.groupBox, dark ? styles.cardDark : styles.cardLight]}>
+            <Text style={styles.groupHeader}>Group {group}</Text>
             {arr.map((team) => (
-              <TouchableOpacity key={team} onPress={() => chooseChampion(team)} onLongPress={() => setTeamOpen(team)} style={styles.teamPill}>
+              <TouchableOpacity key={team} onPress={() => chooseChampion(team)} onLongPress={() => setTeamOpen(team)} style={styles.groupTeamRow}>
                 <Text style={{ fontSize: 18 }}>{FLAGS[team]}</Text>
-                <Text style={{ fontWeight: '900' }}>{team}</Text>
+                <Text style={{ fontWeight: '900', color: fg }}>{team}</Text>
               </TouchableOpacity>
             ))}
           </View>
+          {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} />}
         </View>
       ))}
-      <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-        <Text style={[styles.sectionTitle, { color: fg }]}>Knockout map</Text>
-        <Text style={{ color: fg }}>Round of 32 → Round of 16 → Quarterfinals → Semifinals → Final</Text>
-        <Text style={{ color: fg, marginTop: 8 }}>Teams remain colorful while active. When Phase 2B admin/live updates are connected, eliminated teams will turn gray but stay visible.</Text>
-      </View>
+      <KnockoutBracket dark={dark} fg={fg} />
     </ScrollView>
   );
 }
@@ -436,12 +506,15 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen }) {
 function News({ dark, fg, setNewsOpen }) {
   return (
     <ScrollView style={{ padding: 12 }}>
-      {NEWS.map((n) => (
-        <TouchableOpacity key={n.id} onPress={() => setNewsOpen(n)} style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.sectionTitle, { color: fg }]}>{n.title}</Text>
-          <Text style={{ color: COLORS.amber }}>{n.source} • {n.date}</Text>
-          <Text style={{ color: fg }}>Tap to read full news</Text>
-        </TouchableOpacity>
+      {NEWS.map((n, index) => (
+        <View key={n.id}>
+          <TouchableOpacity onPress={() => setNewsOpen(n)} style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
+            <Text style={[styles.sectionTitle, { color: fg }]}>{n.title}</Text>
+            <Text style={{ color: COLORS.amber }}>{n.source} • {n.date}</Text>
+            <Text style={{ color: fg }}>Tap to read full news</Text>
+          </TouchableOpacity>
+          {index === 0 && <AdBox dark={dark} tone={1} />}
+        </View>
       ))}
     </ScrollView>
   );
@@ -452,7 +525,7 @@ function NewsDetail({ item, onClose, dark }) {
   if (!item) return null;
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
-      <View style={{ padding: 12 }}><ButtonPill label="Back to news" onPress={onClose} color={COLORS.slate} /></View>
+      <BackHeader title="News" onBack={onClose} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
         <Text style={[styles.big, { color: fg }]}>{item.title}</Text>
         <Text style={{ color: COLORS.amber, fontWeight: '900' }}>Source: {item.source} • {item.date}</Text>
@@ -467,23 +540,31 @@ function TeamDetail({ team, onClose, dark }) {
   const d = TEAM_DETAILS[team] || { players: [], achievements: [] };
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
-      <View style={{ padding: 12 }}><ButtonPill label="Back" onPress={onClose} color={COLORS.slate} /></View>
+      <BackHeader title={team} onBack={onClose} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
         <Text style={{ fontSize: 48 }}>{FLAGS[team]}</Text>
         <Text style={[styles.big, { color: fg }]}>{team}</Text>
+        <CoachCard team={team} dark={dark} fg={fg} />
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+          <Jersey color={d.homeJersey || '#ffffff'} label="Home jersey" />
+          <Jersey color={d.awayJersey || COLORS.blue} label="Away jersey" />
+        </View>
         <Text style={{ color: fg, lineHeight: 22 }}>{d.description}</Text>
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 16 }]}>Big achievements</Text>
         {d.achievements.map((x) => <Text key={x} style={{ color: fg }}>• {x}</Text>)}
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 16 }]}>Players</Text>
         {d.players.map((p) => (
-          <View key={`${team}-${p.number}`} style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-            <Text style={{ fontSize: 24 }}>{p.photo} #{p.number}</Text>
-            <Text style={[styles.sectionTitle, { color: fg }]}>{p.name}</Text>
-            <Text style={{ color: fg }}>Position: {p.position}</Text>
-            <Text style={{ color: fg }}>Height / Weight: {p.height} / {p.weight}</Text>
-            <Text style={{ color: fg }}>Education: {p.education}</Text>
-            <Text style={{ color: fg }}>Languages: {p.languages}</Text>
-            <Text style={{ color: fg }}>Achievements: {p.achievements}</Text>
+          <View key={`${team}-${p.number}`} style={[styles.playerCard, dark ? styles.cardDark : styles.cardLight]}>
+            <View style={styles.fullPlayerPhoto}><Text style={{ fontSize: 58 }}>{p.photo}</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{p.number}</Text>
+              <Text style={[styles.sectionTitle, { color: fg }]}>{p.name}</Text>
+              <Text style={{ color: fg }}>Position: {p.position}</Text>
+              <Text style={{ color: fg }}>Height / Weight: {p.height} / {p.weight}</Text>
+              <Text style={{ color: fg }}>Education: {p.education}</Text>
+              <Text style={{ color: fg }}>Languages: {p.languages}</Text>
+              <Text style={{ color: fg }}>Achievements: {p.achievements}</Text>
+            </View>
           </View>
         ))}
       </ScrollView>
@@ -492,11 +573,12 @@ function TeamDetail({ team, onClose, dark }) {
 }
 
 function TopPredictors({ dark, fg }) {
-  const list = Array.from({ length: 30 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 80 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
+  const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
   return (
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       <Text style={{ color: fg }}>Shows everyone with at least one correct prediction. Emails and private data are hidden.</Text>
+      <AdBox dark={dark} tone={0} />
       {list.map((u, i) => (
         <View key={u.nick} style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
           <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
@@ -511,33 +593,54 @@ function TopPredictors({ dark, fg }) {
   );
 }
 
-function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose }) {
-  const [p, setP] = useState(profile || {});
+function SignInScreen({ dark, onBack, onSave }) {
+  const fg = dark ? '#ffffff' : '#0f172a';
+  const [p, setP] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: 'Auto-detected country only' });
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
+      <BackHeader title="Sign in" onBack={onBack} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
-        <ButtonPill label="Close menu" onPress={onClose} color={COLORS.slate} />
-        <Text style={[styles.big, { color: fg }]}>Menu & Account</Text>
-        {['email', 'password', 'name', 'nickname', 'age', 'sex', 'location'].map((key) => (
-          <TextInput
-            key={key}
-            placeholder={key}
-            placeholderTextColor="#94a3b8"
-            secureTextEntry={key === 'password'}
-            value={p[key] || ''}
-            onChangeText={(v) => setP({ ...p, [key]: v })}
-            style={[styles.input, dark ? styles.inputDark : styles.inputLight]}
-          />
+        <Text style={[styles.big, { color: fg }]}>Sign in options</Text>
+        <ButtonPill label="Continue with Google" onPress={() => Alert.alert('Phase 2B', 'Google sign-in will connect with backend authentication.')} color="#ffffff" />
+        <ButtonPill label="Continue with social media" onPress={() => Alert.alert('Phase 2B', 'Social login will connect with backend authentication.')} color="#38bdf8" />
+        <Text style={[styles.sectionTitle, { color: fg, marginTop: 18 }]}>Username / Password</Text>
+        {['email', 'password', 'name', 'nickname', 'age', 'sex'].map((key) => (
+          <TextInput key={key} placeholder={key} placeholderTextColor="#94a3b8" secureTextEntry={key === 'password'} value={p[key] || ''} onChangeText={(v) => setP({ ...p, [key]: v })} style={[styles.input, dark ? styles.inputDark : styles.inputLight]} />
         ))}
-        <ButtonPill label="Sign in / Save profile" onPress={() => saveProfile(p)} color={COLORS.green} />
-        <ButtonPill label="Sign out" onPress={() => saveProfile({})} color="#64748b" />
+        <ButtonPill label="Detect my country" onPress={() => setP({ ...p, location: 'United States' })} color={COLORS.amber} />
+        <Text style={{ color: fg, marginTop: 8 }}>Country shown: {p.location}</Text>
+        <ButtonPill label="Save and return to menu" onPress={() => onSave(p)} color={COLORS.green} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose }) {
+  const [signingIn, setSigningIn] = useState(false);
+  if (signingIn) {
+    return <SignInScreen dark={dark} onBack={() => setSigningIn(false)} onSave={(p) => { saveProfile(p); setSigningIn(false); }} />;
+  }
+  const signedIn = !!profile.email;
+  return (
+    <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
+      <BackHeader title="Menu" onBack={onClose} dark={dark} />
+      <ScrollView style={{ padding: 16 }}>
+        {!signedIn ? <ButtonPill label="Sign in" onPress={() => setSigningIn(true)} color={COLORS.green} /> : <ButtonPill label="Sign out" onPress={() => saveProfile({})} color="#64748b" />}
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
+          <Text style={[styles.big, { color: fg }]}>Account</Text>
+          <Text style={{ color: fg }}>Name: {profile.name || 'Not signed in'}</Text>
+          <Text style={{ color: fg }}>Nickname: {profile.nickname || 'Not set'}</Text>
+          <Text style={{ color: fg }}>Age: {profile.age || 'Not set'}</Text>
+          <Text style={{ color: fg }}>Sex: {profile.sex || 'Not set'}</Text>
+          <Text style={{ color: fg }}>Country: {profile.location || 'Not detected'}</Text>
+        </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Privacy Policy</Text>
           <Text style={{ color: fg }}>We do not sell user data. Leaderboard shows nickname and profile image only when a user has correct predictions.</Text>
           <Text style={[styles.sectionTitle, { color: fg, marginTop: 12 }]}>Terms of Use</Text>
-          <Text style={{ color: fg }}>Predictions are for entertainment. Predictions lock after halftime or when match is finished.</Text>
+          <Text style={{ color: fg }}>Predictions are for entertainment. Score predictions lock after halftime or when match is finished. Best-player voting can happen before or after the game.</Text>
           <Text style={[styles.sectionTitle, { color: fg, marginTop: 12 }]}>Delete Account</Text>
-          <Text style={{ color: fg }}>Phase 2B will include online account deletion. Phase 2A local data can be cleared by uninstalling the app.</Text>
+          <ButtonPill label="Delete local account data" onPress={() => saveProfile({})} color={COLORS.red} />
         </View>
         {admin && (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
@@ -560,6 +663,7 @@ export default function App() {
   const [newsOpen, setNewsOpen] = useState(null);
   const [menu, setMenu] = useState(false);
   const [predictions, setPredictions] = useState({});
+  const [bestPlayers, setBestPlayers] = useState({});
   const [champion, setChampion] = useState(null);
   const [profile, setProfile] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '' });
   const [admin, setAdmin] = useState(false);
@@ -571,18 +675,42 @@ export default function App() {
       const p = await AsyncStorage.getItem('predictions');
       const c = await AsyncStorage.getItem('champion');
       const pr = await AsyncStorage.getItem('profile');
+      const bp = await AsyncStorage.getItem('bestPlayers');
       if (p) setPredictions(JSON.parse(p));
       if (c) setChampion(c);
-      if (pr) setProfile(JSON.parse(pr));
+      if (bp) setBestPlayers(JSON.parse(bp));
+      if (pr) {
+        const parsed = JSON.parse(pr);
+        setProfile(parsed);
+        setAdmin(parsed.email === 'danny@virtualbeehiveinc.com' && parsed.password === 'YaPe1200@');
+      }
     }
     load();
   }, []);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (menu) { setMenu(false); return true; }
+      if (newsOpen) { setNewsOpen(null); return true; }
+      if (teamOpen) { setTeamOpen(null); return true; }
+      if (selected) { setSelected(null); return true; }
+      return false;
+    });
+    return () => sub.remove();
+  }, [menu, newsOpen, teamOpen, selected]);
 
   async function savePrediction(id, a, b) {
     const next = { ...predictions, [String(id)]: { a, b, savedAt: new Date().toISOString() } };
     setPredictions(next);
     await AsyncStorage.setItem('predictions', JSON.stringify(next));
     Alert.alert('Prediction saved', `Your prediction ${a} - ${b} was saved on this phone.`);
+  }
+
+  async function saveBestPlayer(id, playerName) {
+    const next = { ...bestPlayers, [String(id)]: playerName };
+    setBestPlayers(next);
+    await AsyncStorage.setItem('bestPlayers', JSON.stringify(next));
+    Alert.alert('Best player saved', `${playerName} selected as your best player of the game.`);
   }
 
   async function chooseChampion(team) {
@@ -592,13 +720,7 @@ export default function App() {
     }
     Alert.alert('Confirm champion', `Choose ${team} as your champion? This can be selected only once.`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Confirm',
-        onPress: async () => {
-          setChampion(team);
-          await AsyncStorage.setItem('champion', team);
-        },
-      },
+      { text: 'Confirm', onPress: async () => { setChampion(team); await AsyncStorage.setItem('champion', team); } },
     ]);
   }
 
@@ -621,28 +743,23 @@ export default function App() {
         {tab === 'news' && <News dark={dark} fg={fg} setNewsOpen={setNewsOpen} />}
         {tab === 'top' && <TopPredictors dark={dark} fg={fg} />}
       </View>
-      <View style={[styles.nav, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#ffffff' }]}>
-        {[
-          ['matches', 'Matches'],
-          ['groups', 'Groups'],
-          ['news', 'News'],
-          ['top', 'Top'],
-        ].map(([key, label]) => (
+      <View style={[styles.nav, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#ffffff' }] }>
+        {[['matches', 'Matches'], ['groups', 'Groups'], ['news', 'News'], ['top', 'Top']].map(([key, label]) => (
           <TouchableOpacity key={key} onPress={() => setTab(key)} style={[styles.navBtn, tab === key && { backgroundColor: COLORS.amber }]}>
             <Text style={{ fontWeight: '900', color: tab === key ? '#000000' : fg }}>{label}</Text>
           </TouchableOpacity>
         ))}
       </View>
-      <Modal visible={!!selected} animationType="slide">
-        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} />
+      <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
+        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} bestPlayers={bestPlayers} saveBestPlayer={saveBestPlayer} />
       </Modal>
-      <Modal visible={!!teamOpen} animationType="slide">
+      <Modal visible={!!teamOpen} animationType="slide" onRequestClose={() => setTeamOpen(null)}>
         <TeamDetail team={teamOpen} onClose={() => setTeamOpen(null)} dark={dark} />
       </Modal>
-      <Modal visible={!!newsOpen} animationType="slide">
+      <Modal visible={!!newsOpen} animationType="slide" onRequestClose={() => setNewsOpen(null)}>
         <NewsDetail item={newsOpen} onClose={() => setNewsOpen(null)} dark={dark} />
       </Modal>
-      <Modal visible={menu} animationType="slide">
+      <Modal visible={menu} animationType="slide" onRequestClose={() => setMenu(false)}>
         <MenuScreen dark={dark} fg={fg} profile={profile} saveProfile={saveProfile} admin={admin} onClose={() => setMenu(false)} />
       </Modal>
     </SafeAreaView>
@@ -652,6 +769,9 @@ export default function App() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  backHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  backButton: { backgroundColor: COLORS.amber, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
+  headerTitle: { flex: 1, fontSize: 16, fontWeight: '900' },
   logo: { width: 42, height: 42, borderRadius: 21 },
   iconBtn: { paddingHorizontal: 8, paddingVertical: 6 },
   tiny: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
@@ -669,12 +789,11 @@ const styles = StyleSheet.create({
   inputDark: { backgroundColor: '#0f172a', borderColor: COLORS.slate, color: '#ffffff' },
   inputLight: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', color: '#111827' },
   btn: { backgroundColor: COLORS.amber, padding: 10, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 8, flex: 1 },
-  btnText: { fontWeight: '900', color: '#000000' },
+  btnText: { fontWeight: '900', color: '#000000', textAlign: 'center' },
   disabled: { opacity: 0.45 },
   sponsor: { height: 42, justifyContent: 'center', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
   sponsorText: { fontWeight: '900', fontSize: 15, color: COLORS.amber, width: 900 },
   adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10 },
-  teamPill: { backgroundColor: '#f8fafc', borderRadius: 14, padding: 8, flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 4 },
   stepper: { flex: 1, alignItems: 'center', backgroundColor: '#02061788', padding: 10, borderRadius: 14 },
   stepperLabel: { fontWeight: '900', color: COLORS.amber, textAlign: 'center' },
   stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
@@ -683,5 +802,25 @@ const styles = StyleSheet.create({
   blackTitle: { color: COLORS.amber, fontWeight: '900', textAlign: 'center' },
   blackScore: { color: '#ffffff', fontSize: 20, fontWeight: '900', textAlign: 'center', marginTop: 4 },
   blackSmall: { color: '#94a3b8', fontSize: 11, textAlign: 'center' },
+  stadiumHero: { minHeight: 170, borderRadius: 22, overflow: 'hidden', marginBottom: 12, borderWidth: 1, borderColor: COLORS.amber },
+  stadiumEmoji: { position: 'absolute', right: 18, top: 8, fontSize: 94, opacity: 0.28 },
+  stadiumOverlay: { flex: 1, justifyContent: 'flex-end', padding: 16, backgroundColor: '#02061788' },
+  stadiumTitle: { color: '#fff', fontSize: 22, fontWeight: '900' },
+  stadiumText: { color: '#e2e8f0', fontSize: 14, marginTop: 2 },
+  bestPlayerPill: { borderWidth: 1, borderColor: COLORS.slate, borderRadius: 14, padding: 8 },
+  jerseyWrap: { alignItems: 'center', marginBottom: 8 },
+  jersey: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.slate },
+  jerseyLabel: { color: '#94a3b8', fontSize: 10, fontWeight: '800' },
+  coachCard: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: 14, marginBottom: 8 },
   playerMini: { marginTop: 8, padding: 8, borderWidth: 1, borderColor: COLORS.slate, borderRadius: 12 },
+  playerCard: { flexDirection: 'row', gap: 12, borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1 },
+  fullPlayerPhoto: { width: 86, minHeight: 150, borderRadius: 16, backgroundColor: '#020617', alignItems: 'center', justifyContent: 'center' },
+  groupBox: { borderRadius: 16, padding: 12, marginBottom: 10, borderWidth: 1 },
+  groupHeader: { backgroundColor: '#064e3b', color: '#ffffff', fontWeight: '900', padding: 6, borderRadius: 8, marginBottom: 6, textAlign: 'center' },
+  groupTeamRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+  bracketBox: { borderRadius: 18, padding: 12, marginBottom: 18, borderWidth: 1 },
+  bracketRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  bracketSide: { flex: 1, gap: 6 },
+  bracketMatch: { backgroundColor: '#064e3b', color: '#ffffff', fontWeight: '900', paddingVertical: 5, paddingHorizontal: 6, borderRadius: 6, fontSize: 11 },
+  trophyCenter: { width: 90, alignItems: 'center', justifyContent: 'center' },
 });
