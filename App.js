@@ -58,7 +58,7 @@ class ScreenErrorBoundary extends React.Component {
             <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }]}>
               <Text style={[styles.sectionTitle, { color: fg }]}>Temporary screen issue</Text>
               <Text style={{ color: fg }}>This screen was protected from crashing the app.</Text>
-              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 2S restore hotfix</Text>
+              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 2U sponsor/admin/share fix</Text>
             </View>
           </View>
         </SafeAreaView>
@@ -121,9 +121,9 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
 
 
 const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
-const APP_SHARE_URL = 'https://hobbee.fun';
-const APP_BRAND_LINE = 'By Virtual Beehive Inc., creators of Hobbee.FUN — the only hobby-specific social media platform.';
-const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN';
+const APP_SHARE_URL = 'https://hobbee.fun/worldcup-predictor';
+const APP_BRAND_LINE = 'A product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
+const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #WorldCupPredictor';
 const PRIVACY_POLICY_URL = 'https://hobbee.fun/worldcup-predictor-privacy-policy';
 const TERMS_URL = 'https://hobbee.fun/worldcup-predictor-terms';
 const DELETE_ACCOUNT_URL = 'https://hobbee.fun/worldcup-predictor-delete-account';
@@ -158,9 +158,11 @@ async function emailDeleteRequest(profile = {}) {
 
 
 function brandedShareFooter() {
-  return `${APP_SHARE_NAME}
-${APP_BRAND_LINE}
+  return `Download or learn more:
 ${APP_SHARE_URL}
+
+${APP_SHARE_NAME}
+${APP_BRAND_LINE}
 ${APP_SHARE_HASHTAGS}`;
 }
 
@@ -189,7 +191,7 @@ function matchShareMessage(match, scoreA, scoreB, profile = {}) {
   return `${displayNick(profile)} predicted:
 ${FLAGS[match.teamA] || ''} ${match.teamA} ${scoreA} - ${scoreB} ${match.teamB} ${FLAGS[match.teamB] || ''}
 
-Make your own WorldCup 2026 prediction and compete on the leaderboard.
+Make your own WorldCup 2026 predictions, choose your champion, follow groups, and compete on the leaderboard.
 
 ${brandedShareFooter()}`;
 }
@@ -205,7 +207,7 @@ ${brandedShareFooter()}`;
 function leaderboardShareMessage(profile = {}) {
   return `${displayNick(profile)} is competing on the Top Predictors leaderboard in ${APP_SHARE_NAME}.
 
-Join the WorldCup 2026 prediction challenge.
+Make your own WorldCup 2026 predictions and challenge friends on the leaderboard.
 
 ${brandedShareFooter()}`;
 }
@@ -483,25 +485,75 @@ function BackHeader({ title, onBack, dark }) {
   );
 }
 
+
+function normalizeImageUrl(url = '') {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+  const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (driveMatch?.[1]) return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+  const driveOpenMatch = raw.match(/[?&]id=([^&]+)/);
+  if (raw.includes('drive.google.com') && driveOpenMatch?.[1]) return `https://drive.google.com/uc?export=view&id=${driveOpenMatch[1]}`;
+  return raw;
+}
+
+function sponsorLogoFrom(sponsor = {}) {
+  return normalizeImageUrl(sponsor.logoUrl || sponsor.logo || sponsor.imageUrl || sponsor.logoURL || '');
+}
+
+function SponsorLogo({ sponsor, dark }) {
+  const [failed, setFailed] = useState(false);
+  const logoUri = sponsorLogoFrom(sponsor);
+  if (!logoUri || failed) {
+    return (
+      <View style={[styles.sponsorLogoFallback, dark ? { backgroundColor: '#0f172a' } : { backgroundColor: '#fef3c7' }]}>
+        <Text style={{ color: COLORS.amber, fontWeight: '900', fontSize: 18 }}>★</Text>
+      </View>
+    );
+  }
+  return (
+    <Image
+      source={{ uri: logoUri }}
+      style={styles.sponsorLogo}
+      resizeMode="contain"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function SponsorBanner({ dark, sponsor }) {
   const x = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(x, { toValue: -520, duration: 11000, useNativeDriver: true }),
+        Animated.timing(x, { toValue: -360, duration: 12000, useNativeDriver: true }),
         Animated.timing(x, { toValue: 0, duration: 0, useNativeDriver: true }),
       ])
     );
     loop.start();
     return () => loop.stop();
   }, [x]);
-  const name = sponsor?.name || 'Hobbee.FUN';
-  const message = sponsor?.message || 'Sponsored section';
-  const callToAction = sponsor?.callToAction || 'Visit Hobbee.FUN';
+
+  if (sponsor?.active === false) return null;
+  const name = safeText(sponsor?.name, 'Hobbee.FUN');
+  const message = safeText(sponsor?.message, 'Discover hobbies and share predictions with fans.');
+  const callToAction = safeText(sponsor?.callToAction, 'Visit sponsor');
+  const linkUrl = safeText(sponsor?.linkUrl || sponsor?.url, '');
+
+  const openSponsor = () => {
+    if (linkUrl && linkUrl !== 'Not set') openExternalUrl(linkUrl);
+  };
+
   return (
-    <View style={[styles.sponsor, dark ? styles.cardDark : styles.cardLight]}>
-      <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]}>🐝 {name}   •   {message}   •   {callToAction}   •   Sponsor can be changed from admin controls later   •</Animated.Text>
-    </View>
+    <TouchableOpacity onPress={openSponsor} activeOpacity={0.85} style={[styles.sponsor, dark ? styles.cardDark : styles.cardLight]}>
+      <SponsorLogo sponsor={sponsor || {}} dark={dark} />
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        <Text style={[styles.sponsorLabel, { color: dark ? '#94a3b8' : '#64748b' }]}>Sponsored by</Text>
+        <Text style={[styles.sponsorName, { color: dark ? '#ffffff' : '#0f172a' }]} numberOfLines={1}>{name}</Text>
+        <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]} numberOfLines={1}>
+          {message}   •   {callToAction}
+        </Animated.Text>
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -992,7 +1044,7 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
 }
 
 
-function AdminScreen({ dark, onClose, firebaseUser, admin }) {
+function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, onSponsorSaved }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   const muted = dark ? '#cbd5e1' : '#475569';
   const inputStyle = [styles.input, dark ? styles.inputDark : styles.inputLight];
@@ -1003,6 +1055,8 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
     callToAction: 'Visit Hobbee.FUN',
     linkUrl: 'https://hobbee.fun',
     logoUrl: '',
+    logo: '',
+    imageUrl: '',
     active: true,
     startDate: '',
     endDate: '',
@@ -1104,7 +1158,9 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
       message: sponsorForm.message || '',
       callToAction: sponsorForm.callToAction || 'Learn More',
       linkUrl: sponsorForm.linkUrl || '',
-      logoUrl: sponsorForm.logoUrl || '',
+      logoUrl: normalizeImageUrl(sponsorForm.logoUrl || sponsorForm.logo || sponsorForm.imageUrl || ''),
+      logo: normalizeImageUrl(sponsorForm.logo || sponsorForm.logoUrl || sponsorForm.imageUrl || ''),
+      imageUrl: normalizeImageUrl(sponsorForm.imageUrl || sponsorForm.logoUrl || sponsorForm.logo || ''),
       active: sponsorForm.active === true,
       startDate: sponsorForm.startDate || '',
       endDate: sponsorForm.endDate || '',
@@ -1113,6 +1169,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
       updatedAt: serverTimestamp(),
     };
     await writeDoc('sponsors', 'active', payload);
+    if (onSponsorSaved) onSponsorSaved(payload);
     await logAdminAction('save_sponsor', 'sponsors/active', payload);
     Alert.alert('Sponsor saved', 'The active sponsor banner settings were saved to Firebase.');
   }
@@ -1203,8 +1260,9 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
       updatedAt: serverTimestamp(),
     };
     await writeDoc('appConfig', 'ads', payload);
+    if (onAdSettingsSaved) onAdSettingsSaved(payload);
     await logAdminAction('save_ad_settings', 'appConfig/ads', payload);
-    Alert.alert('Ad settings saved', 'Ad placements will follow this Firebase setting after users reopen the app.');
+    Alert.alert('Ad settings saved', 'Ad placements were saved and applied on this device. Other users will receive the setting from Firebase.');
   }
 
   const StatusButton = ({ value, label }) => (
@@ -1232,7 +1290,8 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }] }>
           <Text style={[styles.sectionTitle, { color: fg }]}>AdMob Display Control</Text>
-          <Text style={{ color: muted, marginBottom: 8 }}>Controls Google ad placements without rebuilding. Ad slots auto-hide when AdMob has no fill.</Text>
+          <Text style={{ color: muted, marginBottom: 8 }}>Controls Google ad placements without rebuilding. These switches now save to Firebase and apply immediately on this device after Save.</Text>
+          <Text style={{ color: fg, fontWeight: '900', marginBottom: 8 }}>Current draft: Ads {adForm.adsEnabled ? 'ON' : 'OFF'} • Test ads {adForm.useTestAds ? 'ON' : 'OFF'} • Auto-hide {adForm.autoHideOnNoFill ? 'ON' : 'OFF'} • Non-personalized {adForm.nonPersonalized ? 'ON' : 'OFF'}</Text>
           <ToggleButton label="Ad placements" active={adForm.adsEnabled} onPress={() => setAdForm({ ...adForm, adsEnabled: !adForm.adsEnabled })} />
           <ToggleButton label="Test ads" active={adForm.useTestAds} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={COLORS.amber} />
           <ToggleButton label="Auto-hide no-fill ads" active={adForm.autoHideOnNoFill} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} />
@@ -1248,6 +1307,9 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
           <TextInput placeholder="Call to action" placeholderTextColor="#94a3b8" value={sponsorForm.callToAction} onChangeText={(v)=>setSponsorForm({...sponsorForm,callToAction:v})} style={inputStyle} />
           <TextInput placeholder="Link URL" placeholderTextColor="#94a3b8" value={sponsorForm.linkUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,linkUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Logo URL optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Alternative logo field optional" placeholderTextColor="#94a3b8" value={sponsorForm.logo} onChangeText={(v)=>setSponsorForm({...sponsorForm,logo:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Image URL fallback optional" placeholderTextColor="#94a3b8" value={sponsorForm.imageUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <Text style={{ color: muted, marginBottom: 8 }}>Logo tip: use a direct image URL ending in .png, .jpg, .jpeg, or .webp. Google Drive preview links may not display; this version tries to convert common Drive links automatically.</Text>
           <TextInput placeholder="Start date optional, example 2026-06-01" placeholderTextColor="#94a3b8" value={sponsorForm.startDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,startDate:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="End date optional, example 2026-07-31" placeholderTextColor="#94a3b8" value={sponsorForm.endDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,endDate:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Priority" placeholderTextColor="#94a3b8" value={sponsorForm.priority} onChangeText={(v)=>setSponsorForm({...sponsorForm,priority:v})} style={inputStyle} keyboardType="number-pad" />
@@ -1290,7 +1352,8 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
           <Text style={[styles.sectionTitle, { color: fg }]}>Image URL Manager Plus</Text>
-          <Text style={{ color: muted, marginBottom: 8 }}>Add image links for stadiums, teams, coaches, players, and jerseys without Firebase Storage.</Text>
+          <Text style={{ color: muted, marginBottom: 8 }}>Add direct image links for stadiums, teams, coaches, players, and jerseys without Firebase Storage. Use one document at a time, for example collection stadiums with doc ID metlife, or collection players with doc ID argentina_messi.</Text>
+          <Text style={{ color: muted, marginBottom: 8 }}>Direct image URLs are best. Avoid Google Drive preview links unless converted to a direct view URL.</Text>
           <TextInput placeholder="Collection: stadiums, teams, players, coaches" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Document ID, example: metlife or argentina" placeholderTextColor="#94a3b8" value={imageForm.docId} onChangeText={(v)=>setImageForm({...imageForm,docId:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Main image URL" placeholderTextColor="#94a3b8" value={imageForm.imageUrl} onChangeText={(v)=>setImageForm({...imageForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
@@ -1346,7 +1409,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
-          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 2S restore hotfix</Text>
+          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 2U sponsor/admin/share fix</Text>
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
@@ -1674,6 +1737,8 @@ export default function App() {
           admin={admin}
           firebaseUser={firebaseUser}
           onClose={() => setAdminOpen(false)}
+          onAdSettingsSaved={(settings) => setAdSettings({ ...DEFAULT_AD_SETTINGS, ...(settings || {}) })}
+          onSponsorSaved={(nextSponsor) => setSponsor(nextSponsor)}
         />
       </Modal>
       <Modal visible={authOpen} animationType="slide" onRequestClose={() => setAuthOpen(false)}>
@@ -1726,8 +1791,12 @@ const styles = StyleSheet.create({
   shareBox: { borderWidth: 1, borderColor: '#38bdf8', borderRadius: 14, padding: 10, marginTop: 12, marginBottom: 8, backgroundColor: 'rgba(56,189,248,0.08)' },
   shareHint: { color: '#38bdf8', fontWeight: '800', marginBottom: 4, fontSize: 12 },
   shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
-  sponsor: { height: 42, justifyContent: 'center', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
-  sponsorText: { fontWeight: '900', fontSize: 15, color: COLORS.amber, width: 900 },
+  sponsor: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 10, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
+  sponsorLogo: { width: 54, height: 54, borderRadius: 12, backgroundColor: '#ffffff' },
+  sponsorLogoFallback: { width: 54, height: 54, borderRadius: 12, borderWidth: 1, borderColor: COLORS.amber, alignItems: 'center', justifyContent: 'center' },
+  sponsorLabel: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
+  sponsorName: { fontWeight: '900', fontSize: 16 },
+  sponsorText: { fontWeight: '800', fontSize: 13, color: COLORS.amber, width: 720 },
   adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10, overflow: 'hidden' },
   hiddenAdProbe: { height: 1, opacity: 0, overflow: 'hidden' },
   stepper: { flex: 1, alignItems: 'center', backgroundColor: '#02061788', padding: 10, borderRadius: 14 },
