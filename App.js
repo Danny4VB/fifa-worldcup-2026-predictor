@@ -58,7 +58,7 @@ class ScreenErrorBoundary extends React.Component {
             <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }]}>
               <Text style={[styles.sectionTitle, { color: fg }]}>Temporary screen issue</Text>
               <Text style={{ color: fg }}>This screen was protected from crashing the app.</Text>
-              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 2U sponsor/admin/share fix</Text>
+              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 3E avatar picker</Text>
             </View>
           </View>
         </SafeAreaView>
@@ -85,6 +85,16 @@ const DEFAULT_AD_SETTINGS = {
   nonPersonalized: true,
   autoHideOnNoFill: true,
 };
+
+const AVATAR_OPTIONS = [
+  '🐝','⚽','🏆','🦁','🦅','🦊','🐯','🐬','🐺','🐻','🐼','🦉',
+  '🐵','🦄','🐢','🦈','🦋','🔥','⭐','🥅','👟','🎯','🥇','🎉'
+];
+
+function getAvatar(profile = {}, fallback = '⚽') {
+  const avatar = profile?.avatar || profile?.avatarEmoji || profile?.photo || '';
+  return typeof avatar === 'string' && avatar.trim() ? avatar : fallback;
+}
 
 // Phase 2G Firebase cost-control defaults.
 // Keep high-traffic reads small and cache low-change documents on device.
@@ -989,13 +999,20 @@ function TeamDetail({ team, onClose, dark }) {
 
 function TopPredictors({ dark, fg, adSettings, profile }) {
   const [visibleCount, setVisibleCount] = useState(COST_CONTROL.leaderboardPageSize);
-  const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
+  const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: AVATAR_OPTIONS[i % AVATAR_OPTIONS.length] }));
   const visibleList = list.slice(0, visibleCount);
   return (
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       <Text style={{ color: fg }}>Cost-controlled leaderboard view. The app loads a limited page first, then users can load more.</Text>
       <ShareCopyRow message={leaderboardShareMessage(profile)} shareLabel="Share leaderboard challenge" copyLabel="Copy challenge text" title="Share leaderboard" />
+      <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: COLORS.amber }]}>
+        <Text style={{ fontSize: 34 }}>{getAvatar(profile)}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: fg, fontWeight: '900' }}>Your public leaderboard look</Text>
+          <Text style={{ color: fg }}>{displayNick(profile)} • avatar can be changed in Menu</Text>
+        </View>
+      </View>
       {visibleList.map((u, i) => (
         <React.Fragment key={u.nick}>
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}> 
@@ -1022,7 +1039,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
 
 function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
   const fg = dark ? '#ffffff' : '#0f172a';
-  const [p, setP] = useState({ email: currentProfile?.email || '', password: '', name: currentProfile?.name || '', nickname: currentProfile?.nickname || '', age: currentProfile?.age || '', sex: currentProfile?.sex || '', location: currentProfile?.country || currentProfile?.location || 'Auto-detected country only' });
+  const [p, setP] = useState({ email: currentProfile?.email || '', password: '', name: currentProfile?.name || '', nickname: currentProfile?.nickname || '', age: currentProfile?.age || '', sex: currentProfile?.sex || '', location: currentProfile?.country || currentProfile?.location || 'Auto-detected country only', avatar: getAvatar(currentProfile) });
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title="Sign in" onBack={onBack} dark={dark} />
@@ -1382,6 +1399,33 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
   );
 }
 
+
+function AvatarPicker({ dark, fg, profile = {}, onPick }) {
+  const selectedAvatar = getAvatar(profile);
+  return (
+    <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }]}>
+      <Text style={[styles.sectionTitle, { color: fg }]}>Choose Your Avatar</Text>
+      <Text style={{ color: fg, marginBottom: 10 }}>
+        Pick a built-in avatar for your profile and leaderboard. No photo upload or phone media permission is needed.
+      </Text>
+      <View style={styles.avatarGrid}>
+        {AVATAR_OPTIONS.map((avatar) => {
+          const selected = avatar === selectedAvatar;
+          return (
+            <TouchableOpacity
+              key={avatar}
+              onPress={() => onPick(avatar)}
+              style={[styles.avatarChoice, selected ? styles.avatarChoiceSelected : null]}
+            >
+              <Text style={{ fontSize: 30 }}>{avatar}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, firebaseUser, onOpenSignIn, onSignOut, onOpenAdmin }) {
   const safeProfile = profile && typeof profile === 'object' ? profile : {};
   const signedIn = !!firebaseUser || !!safeProfile?.email;
@@ -1390,7 +1434,12 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
   const profileAge = safeText(safeProfile?.age, 'Not set');
   const profileSex = safeText(safeProfile?.sex, 'Not set');
   const profileCountry = safeText(safeProfile?.country || safeProfile?.location, 'Not detected');
+  const profileAvatar = getAvatar(safeProfile);
   const inviteMessage = appInviteShareMessage(safeProfile);
+  const chooseAvatar = async (avatar) => {
+    await saveProfile({ ...safeProfile, avatar, avatarEmoji: avatar });
+    Alert.alert('Avatar saved', `${avatar} is now your profile avatar.`);
+  };
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }]}>
@@ -1403,14 +1452,22 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
         )}
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.big, { color: fg }]}>Account</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <Text style={{ fontSize: 42 }}>{profileAvatar}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: fg, fontWeight: '900' }}>Public avatar</Text>
+              <Text style={{ color: fg }}>Shown on profile and leaderboard.</Text>
+            </View>
+          </View>
           <Text style={{ color: fg }}>Name: {profileName}</Text>
           <Text style={{ color: fg }}>Nickname: {profileNickname}</Text>
           <Text style={{ color: fg }}>Age: {profileAge}</Text>
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
-          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 2U sponsor/admin/share fix</Text>
+          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 3E avatar picker</Text>
         </View>
+        <AvatarPicker dark={dark} fg={fg} profile={safeProfile} onPick={chooseAvatar} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
           <Text style={{ color: fg }}>Share FIFA WorldCup 2026 Predictor with your social networks, or copy the message and paste it anywhere.</Text>
@@ -1458,7 +1515,7 @@ export default function App() {
   const [predictions, setPredictions] = useState({});
   const [bestPlayers, setBestPlayers] = useState({});
   const [champion, setChampion] = useState(null);
-  const [profile, setProfile] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '' });
+  const [profile, setProfile] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '', avatar: '⚽', avatarEmoji: '⚽' });
   const [admin, setAdmin] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [sponsor, setSponsor] = useState(null);
@@ -1594,6 +1651,8 @@ export default function App() {
         age: clean.age || '',
         sex: clean.sex || '',
         country: clean.country || 'United States',
+        avatar: getAvatar(clean),
+        avatarEmoji: getAvatar(clean),
         photoUrl: clean.photoUrl || '',
         updatedAt: serverTimestamp(),
         lastLoginAt: serverTimestamp(),
@@ -1634,6 +1693,8 @@ export default function App() {
             age: p.age || '',
             sex: p.sex || '',
             country: p.location || 'United States',
+            avatar: getAvatar(p),
+            avatarEmoji: getAvatar(p),
             photoUrl: '',
             isAdmin: false,
             createdAt: serverTimestamp(),
@@ -1646,7 +1707,7 @@ export default function App() {
         latest = await readDoc('users', user.uid);
       } catch (profileError) {
         console.log('Firebase profile/admin check failed', profileError?.message || profileError);
-        latest = { email: user.email || cleanEmail, name: p.name || '', nickname: p.nickname || '', country: p.location || 'United States', isAdmin: false };
+        latest = { email: user.email || cleanEmail, name: p.name || '', nickname: p.nickname || '', country: p.location || 'United States', avatar: getAvatar(p), avatarEmoji: getAvatar(p), isAdmin: false };
       }
 
       const merged = {
@@ -1655,6 +1716,8 @@ export default function App() {
         name: latest?.name || p.name || '',
         nickname: latest?.nickname || p.nickname || '',
         country: latest?.country || p.location || 'United States',
+        avatar: getAvatar(latest || p),
+        avatarEmoji: getAvatar(latest || p),
       };
 
       setProfile(merged);
@@ -1846,4 +1909,26 @@ const styles = StyleSheet.create({
   bracketSide: { flex: 1, gap: 6 },
   bracketMatch: { backgroundColor: '#064e3b', color: '#ffffff', fontWeight: '900', paddingVertical: 5, paddingHorizontal: 6, borderRadius: 6, fontSize: 11 },
   trophyCenter: { width: 90, alignItems: 'center', justifyContent: 'center' },
+
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 8,
+  },
+  avatarChoice: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#475569',
+    backgroundColor: 'rgba(148, 163, 184, 0.12)',
+  },
+  avatarChoiceSelected: {
+    borderColor: '#fbbf24',
+    backgroundColor: 'rgba(251, 191, 36, 0.22)',
+  },
+
 });
