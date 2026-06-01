@@ -34,13 +34,13 @@ const COLORS = {
 
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyCTAXgkM7zUdB3jajE3SRfcdvMLOkgW5_w',
-  authDomain: 'fifa-worldcup-2026-predictor.firebaseapp.com',
-  projectId: 'fifa-worldcup-2026-predictor',
-  storageBucket: 'fifa-worldcup-2026-predictor.firebasestorage.app',
-  messagingSenderId: '560795586407',
-  appId: '1:560795586407:web:f9cacd1bcb66b2c8c9a9c2',
-  measurementId: 'G-ZEFX4R6LTZ',
+  apiKey: "AIzaSyCTAXgkM7zUdB3jajE3SRfcdvML0kgW5_w",
+  authDomain: "fifa-worldcup-2026-predictor.firebaseapp.com",
+  projectId: "fifa-worldcup-2026-predictor",
+  storageBucket: "fifa-worldcup-2026-predictor.firebasestorage.app",
+  messagingSenderId: "560795586407",
+  appId: "1:560795586407:web:f9cacd1bcb66b2c8c9a9c2",
+  measurementId: "G-ZEFX4R6LTZ"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
