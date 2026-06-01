@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const COLORS = {
   darkBg: '#070b12',
@@ -32,6 +33,23 @@ const COLORS = {
   soft: '#1e293b',
 };
 
+
+const ADMOB_ANDROID_APP_ID = 'ca-app-pub-7388735966130444~1056081892';
+const ADMOB_AD_UNITS = {
+  matches: 'ca-app-pub-7388735966130444/1111922210',
+  top: 'ca-app-pub-7388735966130444/7839158260',
+  news: 'ca-app-pub-7388735966130444/3844072939',
+  groups: 'ca-app-pub-7388735966130444/6526076590',
+};
+
+// Keep this true while testing so AdMob does not flag the account.
+// Switch to false only after the app is ready for production review.
+const USE_ADMOB_TEST_ADS = true;
+
+function getAdUnitId(placement = 'matches') {
+  if (USE_ADMOB_TEST_ADS) return TestIds.BANNER;
+  return ADMOB_AD_UNITS[placement] || ADMOB_AD_UNITS.matches;
+}
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCTAXgkM7zUdB3jajE3SRfcdvML0kgW5_w',
@@ -270,18 +288,29 @@ function SponsorBanner({ dark, sponsor }) {
   const callToAction = sponsor?.callToAction || 'Visit Hobbee.FUN';
   return (
     <View style={[styles.sponsor, dark ? styles.cardDark : styles.cardLight]}>
-      <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]}>🐝 {name}   •   {message}   •   {callToAction}   •   Sponsor can be changed from Firebase admin later   •</Animated.Text>
+      <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]}>🐝 {name}   •   {message}   •   {callToAction}   •   Sponsor can be changed from admin controls later   •</Animated.Text>
     </View>
   );
 }
 
-function AdBox({ dark, tone = 0 }) {
+function AdBox({ dark, tone = 0, placement = 'matches' }) {
   const backgrounds = dark ? ['#0b1220', '#111827', '#172033'] : ['#f1f5f9', '#fff7ed', '#ecfeff'];
   const borders = dark ? ['#334155', '#475569', '#14532d'] : ['#cbd5e1', '#fed7aa', '#a5f3fc'];
+  const [failed, setFailed] = useState(false);
   return (
-    <View style={[styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }]}>
-      <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900' }}>Advertisement</Text>
-      <Text style={{ color: dark ? '#94a3b8' : '#64748b', fontSize: 12, marginTop: 4 }}>Google AdMob native ad placeholder</Text>
+    <View style={[styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }]}> 
+      <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900', marginBottom: 6 }}>Advertisement</Text>
+      {!failed ? (
+        <BannerAd
+          unitId={getAdUnitId(placement)}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+          onAdFailedToLoad={() => setFailed(true)}
+        />
+      ) : (
+        <Text style={{ color: dark ? '#94a3b8' : '#64748b', fontSize: 12, marginTop: 4 }}>Google AdMob test ad area</Text>
+      )}
+      {USE_ADMOB_TEST_ADS ? <Text style={{ color: dark ? '#64748b' : '#94a3b8', fontSize: 10, marginTop: 4 }}>Test ads enabled</Text> : null}
     </View>
   );
 }
@@ -309,7 +338,7 @@ function Matches({ dark, fg, predictions, setSelected }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.big, { color: fg }]}>Matches</Text>
       <Text style={{ color: fg, marginBottom: 8 }}>All 104 tournament matches are listed. Tap any match to predict before halftime.</Text>
-      <AdBox dark={dark} tone={0} />
+      <AdBox dark={dark} tone={0} placement="matches" />
       {FIXTURES.map((match, index) => {
         const st = matchStatus(match);
         const key = String(match.id);
@@ -326,7 +355,7 @@ function Matches({ dark, fg, predictions, setSelected }) {
               <Text style={{ color: fg }}>{match.stadium} • {match.city}</Text>
               {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
             </TouchableOpacity>
-            {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} />}
+            {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="matches" />}
           </View>
         );
       })}
@@ -394,7 +423,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <Text style={styles.blackScore}>{match.teamA} {match.liveScore[0]} - {match.liveScore[1]} {match.teamB}</Text>
           </View>
         </View>
-        <AdBox dark={dark} tone={1} />
+        <AdBox dark={dark} tone={1} placement="matches" />
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
           {['summary', 'compare', 'head'].map((t) => (
             <ButtonPill key={t} label={t === 'summary' ? 'Summary' : t === 'compare' ? 'Teams' : 'History'} onPress={() => setTab(t)} color={tab === t ? COLORS.amber : COLORS.slate} />
@@ -411,12 +440,6 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={[styles.sectionTitle, { color: fg, marginTop: 16 }]}>Match location</Text>
-            <Text style={{ color: fg }}>Stadium: {match.stadium}</Text>
-            <Text style={{ color: fg }}>City/State: {match.city}, {match.state}</Text>
-            <Text style={{ color: fg }}>Country: {match.country}</Text>
-            <Text style={{ color: fg }}>Capacity: {match.capacity}</Text>
-            <Text style={{ color: fg }}>Ticket range: {match.ticketRange}</Text>
           </View>
         )}
         {tab === 'compare' && <TeamCompare a={match.teamA} b={match.teamB} dark={dark} setTeamOpen={setTeamOpen} />}
@@ -424,7 +447,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Previous matches</Text>
             <Text style={{ color: fg }}>{match.previous}</Text>
-            <AdBox dark={dark} tone={2} />
+            <AdBox dark={dark} tone={2} placement="matches" />
           </View>
         )}
       </ScrollView>
@@ -526,7 +549,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen }) {
               </TouchableOpacity>
             ))}
           </View>
-          {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} />}
+          {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="groups" />}
         </View>
       ))}
       <KnockoutBracket dark={dark} fg={fg} />
@@ -544,7 +567,7 @@ function News({ dark, fg, setNewsOpen }) {
             <Text style={{ color: COLORS.amber }}>{n.source} • {n.date}</Text>
             <Text style={{ color: fg }}>Tap to read full news</Text>
           </TouchableOpacity>
-          {index === 0 && <AdBox dark={dark} tone={1} />}
+          {index === 0 && <AdBox dark={dark} tone={1} placement="news" />}
         </View>
       ))}
     </ScrollView>
@@ -619,7 +642,7 @@ function TopPredictors({ dark, fg }) {
               <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
             </View>
           </View>
-          {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} />}
+          {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} placement="top" />}
         </React.Fragment>
       ))}
     </ScrollView>
@@ -633,16 +656,16 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title="Sign in" onBack={onBack} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
-        <Text style={[styles.big, { color: fg }]}>Firebase account</Text>
-        <Text style={{ color: fg, marginBottom: 12 }}>Email/password is connected to Firebase. Google and social sign-in will be added after this backend stage is stable.</Text>
+        <Text style={[styles.big, { color: fg }]}>Account</Text>
+        <Text style={{ color: fg, marginBottom: 12 }}>Create an account or sign in to save your predictions online, keep leaderboard points, and access your profile from another device. Google and social sign-in will be added later.</Text>
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 10 }]}>Email / Password</Text>
         {['email', 'password', 'name', 'nickname', 'age', 'sex'].map((key) => (
           <TextInput key={key} placeholder={key} placeholderTextColor="#94a3b8" secureTextEntry={key === 'password'} value={p[key] || ''} onChangeText={(v) => setP({ ...p, [key]: v })} style={[styles.input, dark ? styles.inputDark : styles.inputLight]} autoCapitalize={key === 'email' ? 'none' : 'sentences'} />
         ))}
         <ButtonPill label="Detect my country" onPress={() => setP({ ...p, location: 'United States' })} color={COLORS.amber} />
         <Text style={{ color: fg, marginTop: 8 }}>Country shown publicly: {p.location}</Text>
-        <ButtonPill label="Create new Firebase account" onPress={() => onEmailAuth(p, 'signup')} color={COLORS.green} />
-        <ButtonPill label="Sign in with Firebase" onPress={() => onEmailAuth(p, 'signin')} color={COLORS.blue} />
+        <ButtonPill label="Create New Account" onPress={() => onEmailAuth(p, 'signup')} color={COLORS.green} />
+        <ButtonPill label="Sign In" onPress={() => onEmailAuth(p, 'signin')} color={COLORS.blue} />
         <ButtonPill label="Save profile locally only" onPress={() => onSave(p)} color="#64748b" />
       </ScrollView>
     </SafeAreaView>
@@ -673,7 +696,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Age: {profileAge}</Text>
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
-          <Text style={{ color: fg }}>Firebase: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
+          <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Privacy Policy</Text>
@@ -788,7 +811,7 @@ export default function App() {
         teamBScore: b,
         updatedAt: serverTimestamp(),
       });
-      Alert.alert('Prediction saved online', `Your prediction ${a} - ${b} was saved to Firebase.`);
+      Alert.alert('Prediction saved online', `Your prediction ${a} - ${b} was saved online.`);
     } else {
       Alert.alert('Prediction saved locally', `Your prediction ${a} - ${b} was saved on this phone. Sign in to save online.`);
     }
@@ -836,7 +859,7 @@ export default function App() {
       await writeDoc('users', firebaseUser.uid, profileDoc);
       const latest = await readDoc('users', firebaseUser.uid);
       if (latest?.isAdmin === true) setAdmin(true);
-      Alert.alert('Profile saved online', 'Your profile was saved to Firebase.');
+      Alert.alert('Profile saved online', 'Your profile was saved online.');
     } else {
       Alert.alert('Profile saved locally', 'Sign in to save this profile online.');
     }
@@ -898,12 +921,12 @@ export default function App() {
 
       Alert.alert(
         mode === 'signup' ? 'Account created' : 'Signed in',
-        merged?.isAdmin ? 'Admin access enabled.' : 'Firebase account is connected.'
+        merged?.isAdmin ? 'Admin access enabled.' : 'Account is connected.'
       );
       return true;
     } catch (e) {
-      console.log('Firebase sign-in error', e?.code, e?.message || e);
-      Alert.alert('Firebase sign-in error', e?.message || 'Unable to sign in.');
+      console.log('Sign-in error', e?.code, e?.message || e);
+      Alert.alert('Sign-in error', e?.message || 'Unable to sign in.');
       return false;
     }
   }

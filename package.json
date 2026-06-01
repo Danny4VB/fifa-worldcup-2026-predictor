@@ -1,6 +1,6 @@
 {
   "name": "fifa-worldcup-2026-predictor",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -19,7 +19,8 @@
     "react-native-safe-area-context": "latest",
     "react-native-screens": "latest",
     "@react-native-async-storage/async-storage": "latest",
-    "firebase": "latest"
+    "firebase": "latest",
+    "react-native-google-mobile-ads": "latest"
   },
   "devDependencies": {
     "@babel/core": "latest"
