@@ -35,6 +35,38 @@ const COLORS = {
   soft: '#1e293b',
 };
 
+class ScreenErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, message: error?.message || 'Screen failed to load.' };
+  }
+  componentDidCatch(error) {
+    console.log('ScreenErrorBoundary caught:', error);
+  }
+  render() {
+    if (this.state.hasError) {
+      const dark = this.props.dark;
+      const fg = dark ? '#ffffff' : '#0f172a';
+      return (
+        <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }]}>
+          <BackHeader title="Screen recovery" onBack={this.props.onBack || (() => {})} dark={dark} />
+          <View style={{ padding: 16 }}>
+            <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }]}>
+              <Text style={[styles.sectionTitle, { color: fg }]}>Temporary screen issue</Text>
+              <Text style={{ color: fg }}>This screen was protected from crashing the app.</Text>
+              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 2R hotfix</Text>
+            </View>
+          </View>
+        </SafeAreaView>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 
 const ADMOB_ANDROID_APP_ID = 'ca-app-pub-7388735966130444~1056081892';
 const ADMOB_AD_UNITS = {
@@ -70,6 +102,15 @@ function cacheKeyForDoc(path, id) {
 
 function safeJsonParse(value, fallback = null) {
   try { return value ? JSON.parse(value) : fallback; } catch { return fallback; }
+}
+
+// Phase 2R safety helper: never render raw objects inside <Text>.
+// Some Firebase/profile fields can accidentally be objects, which can crash React Native when Menu opens.
+function safeText(value, fallback = 'Not set') {
+  if (value === null || value === undefined || value === '') return fallback;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value?.seconds) return new Date(value.seconds * 1000).toLocaleString();
+  try { return JSON.stringify(value); } catch { return fallback; }
 }
 
 function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
@@ -108,7 +149,7 @@ async function copyShareMessage(message) {
 }
 
 function displayNick(profile = {}) {
-  return profile?.nickname || profile?.name || 'A WorldCup fan';
+  return safeText(profile?.nickname || profile?.name, 'A WorldCup fan');
 }
 
 function matchShareMessage(match, scoreA, scoreB, profile = {}) {
@@ -385,10 +426,14 @@ function ButtonPill({ label, onPress, disabled, color }) {
 }
 
 function ShareCopyRow({ message, shareLabel = 'Share', copyLabel = 'Copy text', title = APP_SHARE_NAME }) {
+  const safeMessage = safeText(message, `${APP_SHARE_NAME}\n${APP_SHARE_URL}`);
   return (
-    <View style={styles.shareRow}>
-      <ButtonPill label={shareLabel} onPress={() => shareAppMessage(message, title)} color={COLORS.blue} />
-      <ButtonPill label={copyLabel} onPress={() => copyShareMessage(message)} color={COLORS.slate} />
+    <View style={styles.shareBox}>
+      <Text style={styles.shareHint}>Share or copy this branded message</Text>
+      <View style={styles.shareRow}>
+        <ButtonPill label={shareLabel} onPress={() => shareAppMessage(safeMessage, title)} color={COLORS.blue} />
+        <ButtonPill label={copyLabel} onPress={() => copyShareMessage(safeMessage)} color={COLORS.slate} />
+      </View>
     </View>
   );
 }
@@ -1242,12 +1287,14 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
 }
 
 function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, firebaseUser, onOpenSignIn, onSignOut, onOpenAdmin }) {
-  const signedIn = !!firebaseUser || !!profile?.email;
-  const profileName = profile?.name || 'Not signed in';
-  const profileNickname = profile?.nickname || 'Not set';
-  const profileAge = profile?.age || 'Not set';
-  const profileSex = profile?.sex || 'Not set';
-  const profileCountry = profile?.country || profile?.location || 'Not detected';
+  const safeProfile = profile && typeof profile === 'object' ? profile : {};
+  const signedIn = !!firebaseUser || !!safeProfile?.email;
+  const profileName = safeText(safeProfile?.name, signedIn ? 'Signed in user' : 'Not signed in');
+  const profileNickname = safeText(safeProfile?.nickname, 'Not set');
+  const profileAge = safeText(safeProfile?.age, 'Not set');
+  const profileSex = safeText(safeProfile?.sex, 'Not set');
+  const profileCountry = safeText(safeProfile?.country || safeProfile?.location, 'Not detected');
+  const inviteMessage = appInviteShareMessage(safeProfile);
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }]}>
@@ -1266,11 +1313,12 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
+          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 2R hotfix</Text>
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
           <Text style={{ color: fg }}>Share FIFA WorldCup 2026 Predictor with your social networks, or copy the message and paste it anywhere.</Text>
-          <ShareCopyRow message={appInviteShareMessage(profile)} shareLabel="Share app invite" copyLabel="Copy invite text" title="Invite friends" />
+          <ShareCopyRow message={inviteMessage} shareLabel="Share app invite" copyLabel="Copy invite text" title="Invite friends" />
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Privacy Policy</Text>
@@ -1625,6 +1673,8 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: COLORS.amber, padding: 10, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 8, flex: 1 },
   btnText: { fontWeight: '900', color: '#000000', textAlign: 'center' },
   disabled: { opacity: 0.45 },
+  shareBox: { borderWidth: 1, borderColor: '#38bdf8', borderRadius: 14, padding: 10, marginTop: 12, marginBottom: 8, backgroundColor: 'rgba(56,189,248,0.08)' },
+  shareHint: { color: '#38bdf8', fontWeight: '800', marginBottom: 4, fontSize: 12 },
   shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
   sponsor: { height: 42, justifyContent: 'center', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
   sponsorText: { fontWeight: '900', fontSize: 15, color: COLORS.amber, width: 900 },
