@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -17,7 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const COLORS = {
@@ -237,20 +237,10 @@ function matchStatus(match) {
   const start = new Date(match.dateTime);
   const lock = new Date(start.getTime() + 45 * 60 * 1000);
   const finish = new Date(start.getTime() + 120 * 60 * 1000);
-  const raw = String(match.adminStatus || match.status || '').toLowerCase();
-  if (['final', 'finished', 'fulltime', 'full-time'].includes(raw)) {
-    return { label: 'Final', bucket: 'finished', color: '#94a3b8', locked: true, left: 0, prompt: 'Match finished. Prediction closed.' };
-  }
-  if (['halftime', 'half-time', 'secondhalf', 'second-half', 'locked'].includes(raw)) {
-    return { label: raw.includes('half') ? 'Halftime / Locked' : 'Locked', bucket: 'locked', color: COLORS.amber, locked: true, left: 0, prompt: 'Prediction locked after halftime.' };
-  }
-  if (['live', 'firsthalf', 'first-half'].includes(raw)) {
-    return { label: 'Live 1st Half', bucket: 'live', color: COLORS.green, locked: false, left: Math.max(0, lock - now), prompt: 'Prediction closes at halftime.' };
-  }
-  if (now < start) return { label: 'Upcoming', bucket: 'upcoming', color: COLORS.amber, locked: false, left: start - now, prompt: 'Prediction open until kickoff and first half.' };
-  if (now >= start && now < lock) return { label: 'Live 1st Half', bucket: 'live', color: COLORS.green, locked: false, left: lock - now, prompt: 'Prediction closes at halftime.' };
-  if (now >= lock && now < finish) return { label: 'Locked', bucket: 'locked', color: '#64748b', locked: true, left: 0, prompt: 'Prediction locked after halftime.' };
-  return { label: 'Final', bucket: 'finished', color: '#94a3b8', locked: true, left: 0, prompt: 'Match finished. Prediction closed.' };
+  if (now < start) return { label: 'Upcoming', color: COLORS.amber, locked: false, left: start - now, prompt: 'Prediction open until kickoff and first half.' };
+  if (now >= start && now < lock) return { label: 'Live 1st Half', color: COLORS.green, locked: false, left: lock - now, prompt: 'Prediction closes at halftime.' };
+  if (now >= lock && now < finish) return { label: 'Locked', color: '#64748b', locked: true, left: 0, prompt: 'Prediction locked after halftime.' };
+  return { label: 'Finished', color: '#94a3b8', locked: true, left: 0, prompt: 'Match finished. Prediction closed.' };
 }
 
 function fmtLeft(ms) {
@@ -264,102 +254,6 @@ function fmtLeft(ms) {
 
 function fakeAverage(matchId, side) {
   return Math.round((matchId * side + side * 2) % 5);
-}
-
-
-function applyMatchOverrides(fixtures, overrides = {}) {
-  return fixtures.map((match) => {
-    const override = overrides[String(match.id)] || {};
-    const hasScoreA = override.teamAScore !== undefined || override.scoreA !== undefined;
-    const hasScoreB = override.teamBScore !== undefined || override.scoreB !== undefined;
-    const scoreA = hasScoreA ? Number(override.teamAScore ?? override.scoreA ?? 0) : match.liveScore?.[0] ?? 0;
-    const scoreB = hasScoreB ? Number(override.teamBScore ?? override.scoreB ?? 0) : match.liveScore?.[1] ?? 0;
-    return {
-      ...match,
-      ...override,
-      adminStatus: override.status || override.adminStatus || match.adminStatus || match.status || '',
-      liveScore: [Number.isFinite(scoreA) ? scoreA : 0, Number.isFinite(scoreB) ? scoreB : 0],
-    };
-  });
-}
-
-function isSameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function getMatchSmartRank(match) {
-  const st = matchStatus(match);
-  const now = new Date();
-  const start = new Date(match.dateTime);
-  if (st.bucket === 'live') return 0;
-  if (!st.locked && isSameDay(start, now)) return 1;
-  if (st.bucket === 'locked' && isSameDay(start, now)) return 2;
-  if (st.bucket === 'finished') {
-    const ageHours = Math.abs(now - start) / 36e5;
-    return ageHours < 36 ? 3 : 5;
-  }
-  return 4;
-}
-
-function sortMatchesSmartly(matches) {
-  return [...matches].sort((a, b) => {
-    const rankA = getMatchSmartRank(a);
-    const rankB = getMatchSmartRank(b);
-    if (rankA !== rankB) return rankA - rankB;
-    return new Date(a.dateTime) - new Date(b.dateTime);
-  });
-}
-
-function getRelevantMatchId(matches) {
-  const sorted = sortMatchesSmartly(matches);
-  const live = sorted.find((m) => matchStatus(m).bucket === 'live');
-  if (live) return live.id;
-  const today = sorted.find((m) => isSameDay(new Date(m.dateTime), new Date()) && !matchStatus(m).locked);
-  if (today) return today.id;
-  const upcoming = sorted.find((m) => !matchStatus(m).locked);
-  if (upcoming) return upcoming.id;
-  return sorted.find((m) => matchStatus(m).bucket === 'finished')?.id || sorted[0]?.id;
-}
-
-function statusTagText(match) {
-  const st = matchStatus(match);
-  const start = new Date(match.dateTime);
-  if (st.bucket === 'live') return 'Live now';
-  if (st.bucket === 'finished') return 'Finished';
-  if (isSameDay(start, new Date())) return 'Today';
-  return st.label;
-}
-
-function calculatePredictionPoints(match, prediction) {
-  if (!prediction) return { points: 0, label: 'No prediction' };
-  const st = matchStatus(match);
-  if (st.bucket !== 'finished') return { points: 0, label: 'Pending result' };
-  const finalA = Number(match.liveScore?.[0] ?? 0);
-  const finalB = Number(match.liveScore?.[1] ?? 0);
-  const predA = Number(prediction.a ?? prediction.teamAScore ?? 0);
-  const predB = Number(prediction.b ?? prediction.teamBScore ?? 0);
-  if (predA === finalA && predB === finalB) return { points: 50, label: 'Exact score' };
-  const predOutcome = predA === predB ? 'draw' : predA > predB ? 'A' : 'B';
-  const finalOutcome = finalA === finalB ? 'draw' : finalA > finalB ? 'A' : 'B';
-  if (predOutcome === finalOutcome && finalOutcome === 'draw') return { points: 15, label: 'Correct draw' };
-  if (predOutcome === finalOutcome) return { points: 10, label: 'Correct winner' };
-  return { points: 0, label: 'Missed result' };
-}
-
-function calculateLocalScore(matches, predictions) {
-  return matches.reduce((acc, match) => {
-    const result = calculatePredictionPoints(match, predictions[String(match.id)]);
-    acc.points += result.points;
-    if (result.points > 0) acc.correct += 1;
-    if (result.points === 50) acc.exact += 1;
-    return acc;
-  }, { points: 0, correct: 0, exact: 0 });
-}
-
-function predictionAverageText(match, predictions) {
-  const pred = predictions[String(match.id)];
-  if (!pred) return { line: `${match.teamA} — ${match.teamB}`, note: 'Global Firebase average will appear as more users save predictions online.' };
-  return { line: `${match.teamA} ${pred.a} - ${pred.b} ${match.teamB}`, note: 'Showing your saved prediction until global Firebase averages are aggregated.' };
 }
 
 function ButtonPill({ label, onPress, disabled, color }) {
@@ -446,65 +340,27 @@ function Header({ dark, fg, setDark, setMenu }) {
   );
 }
 
-function Matches({ dark, fg, predictions, setSelected, adSettings, matchOverrides }) {
-  const scrollRef = useRef(null);
-  const [filter, setFilter] = useState('smart');
-  const effectiveMatches = useMemo(() => applyMatchOverrides(FIXTURES, matchOverrides), [matchOverrides]);
-  const relevantId = useMemo(() => getRelevantMatchId(effectiveMatches), [effectiveMatches]);
-  const shownMatches = useMemo(() => {
-    const smart = sortMatchesSmartly(effectiveMatches);
-    if (filter === 'live') return smart.filter((m) => matchStatus(m).bucket === 'live');
-    if (filter === 'today') return smart.filter((m) => isSameDay(new Date(m.dateTime), new Date()));
-    if (filter === 'upcoming') return smart.filter((m) => !matchStatus(m).locked);
-    if (filter === 'finished') return smart.filter((m) => matchStatus(m).bucket === 'finished');
-    if (filter === 'all') return effectiveMatches;
-    return smart;
-  }, [effectiveMatches, filter]);
-
-  useEffect(() => {
-    const index = shownMatches.findIndex((m) => m.id === relevantId);
-    if (index > 0 && filter === 'smart') {
-      const timer = setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, index * 150 - 20), animated: true }), 450);
-      return () => clearTimeout(timer);
-    }
-  }, [shownMatches, relevantId, filter]);
-
+function Matches({ dark, fg, predictions, setSelected, adSettings }) {
   return (
-    <ScrollView ref={scrollRef} style={{ padding: 12 }} contentContainerStyle={{ paddingBottom: 30 }}>
+    <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.big, { color: fg }]}>Matches</Text>
-      <Text style={{ color: fg, marginBottom: 8 }}>Smart match list moves with the tournament date. Live, today, and recent results appear first, but you can still scroll all 104 matches.</Text>
-      <View style={styles.filterRow}>
-        {[['smart', 'Smart'], ['live', 'Live'], ['today', 'Today'], ['upcoming', 'Upcoming'], ['finished', 'Finished'], ['all', 'All']].map(([key, label]) => (
-          <TouchableOpacity key={key} onPress={() => setFilter(key)} style={[styles.filterChip, filter === key && { backgroundColor: COLORS.amber, borderColor: COLORS.amber }] }>
-            <Text style={{ color: filter === key ? '#000' : fg, fontWeight: '900' }}>{label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Text style={{ color: fg, marginBottom: 8 }}>All 104 tournament matches are listed. Tap any match to predict before halftime.</Text>
       <AdBox dark={dark} tone={0} placement="matches" adSettings={adSettings} />
-      {shownMatches.length === 0 ? (
-        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={{ color: fg, fontWeight: '900' }}>No matches in this filter.</Text>
-        </View>
-      ) : null}
-      {shownMatches.map((match, index) => {
+      {FIXTURES.map((match, index) => {
         const st = matchStatus(match);
-        const pred = predictions[String(match.id)];
-        const scoreInfo = calculatePredictionPoints(match, pred);
-        const isRelevant = match.id === relevantId;
-        const isFinished = st.bucket === 'finished';
+        const key = String(match.id);
+        const pred = predictions[key];
         return (
           <View key={match.id}>
-            <TouchableOpacity onPress={() => setSelected(match)} style={[styles.matchCard, dark ? styles.cardDark : styles.cardLight, isRelevant && { borderColor: COLORS.green, borderWidth: 2 }, isFinished && { opacity: 0.62 }] }>
+            <TouchableOpacity onPress={() => setSelected(match)} style={[styles.matchCard, dark ? styles.cardDark : styles.cardLight]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
-                <Text style={{ color: st.color, fontWeight: '900' }}>#{match.matchNo} {statusTagText(match)}</Text>
+                <Text style={{ color: st.color, fontWeight: '900' }}>#{match.matchNo} {st.label}</Text>
                 <Text style={{ color: fg }}>{fmtDate(match.dateTime)}</Text>
               </View>
               <Text style={[styles.matchTeams, { color: fg }]}>{FLAGS[match.teamA] || '🏳️'} {match.teamA}  vs  {FLAGS[match.teamB] || '🏳️'} {match.teamB}</Text>
               <Text style={{ color: fg }}>{match.stage} {match.group ? `• Group ${match.group}` : ''}</Text>
               <Text style={{ color: fg }}>{match.stadium} • {match.city}</Text>
-              {st.locked ? <Text style={{ color: st.color, fontWeight: '900' }}>Prediction locked</Text> : <Text style={{ color: COLORS.green, fontWeight: '900' }}>Prediction open until halftime</Text>}
-              {isFinished ? <Text style={{ color: fg, fontWeight: '900' }}>Final score: {match.liveScore[0]} - {match.liveScore[1]}</Text> : null}
-              {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b} • {scoreInfo.label}{scoreInfo.points ? ` • ${scoreInfo.points} pts` : ''}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
+              {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
             </TouchableOpacity>
             {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="matches" adSettings={adSettings} />}
           </View>
@@ -566,8 +422,8 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
-            <Text style={styles.blackScore}>{predictionAverageText(match, predictions).line}</Text>
-            <Text style={styles.blackSmall}>{predictionAverageText(match, predictions).note}</Text>
+            <Text style={styles.blackScore}>{match.teamA} {fakeAverage(match.id, 1)} - {fakeAverage(match.id, 2)} {match.teamB}</Text>
+            <Text style={styles.blackSmall}>Placeholder until backend global averages are connected.</Text>
           </View>
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Live Score</Text>
@@ -777,29 +633,20 @@ function TeamDetail({ team, onClose, dark }) {
   );
 }
 
-function TopPredictors({ dark, fg, adSettings, predictions, matchOverrides, profile }) {
-  const effectiveMatches = useMemo(() => applyMatchOverrides(FIXTURES, matchOverrides), [matchOverrides]);
-  const localScore = useMemo(() => calculateLocalScore(effectiveMatches, predictions || {}), [effectiveMatches, predictions]);
-  const hasLocalScore = localScore.points > 0 || Object.keys(predictions || {}).length > 0;
-  const sampleList = Array.from({ length: 40 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: Math.max(0, 120 - i * 2), correct: Math.max(1, 12 - (i % 7)), exact: i % 5, photo: '👤', sample: true }));
-  const localUser = { nick: profile?.nickname || profile?.name || 'You', points: localScore.points, correct: localScore.correct, exact: localScore.exact, photo: '⭐', sample: false };
-  const list = hasLocalScore ? [localUser, ...sampleList].sort((a, b) => b.points - a.points) : sampleList;
+function TopPredictors({ dark, fg, adSettings }) {
+  const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
   return (
-    <ScrollView style={{ padding: 12 }} contentContainerStyle={{ paddingBottom: 30 }}>
+    <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
-      <Text style={{ color: fg }}>Leaderboard scoring is now calculated from finished match results. Global Firebase leaderboard summaries will replace sample predictor rows as real users accumulate correct results.</Text>
-      <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }] }>
-        <Text style={[styles.sectionTitle, { color: fg }]}>Scoring rules</Text>
-        <Text style={{ color: fg }}>Exact score: 50 pts • Correct draw: 15 pts • Correct winner: 10 pts</Text>
-      </View>
+      <Text style={{ color: fg }}>Shows everyone with at least one correct prediction. Emails and private data are hidden.</Text>
       {list.map((u, i) => (
-        <React.Fragment key={`${u.nick}-${i}`}>
-          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }, !u.sample && { borderColor: COLORS.green, borderWidth: 2 }] }>
+        <React.Fragment key={u.nick}>
+          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
             <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
             <Text style={{ fontSize: 28 }}>{u.photo}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}{u.sample ? '' : ' • Your score'}</Text>
-              <Text style={{ color: fg }}>{u.correct} correct • {u.exact || 0} exact • {u.points} pts</Text>
+              <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}</Text>
+              <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
             </View>
           </View>
           {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
@@ -835,28 +682,80 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
 
 function AdminScreen({ dark, onClose, firebaseUser, admin }) {
   const fg = dark ? '#ffffff' : '#0f172a';
+  const muted = dark ? '#cbd5e1' : '#475569';
+  const inputStyle = [styles.input, dark ? styles.inputDark : styles.inputLight];
+
   const [sponsorForm, setSponsorForm] = useState({
     name: 'Hobbee.FUN',
     message: 'Discover hobbies and share predictions with fans.',
     callToAction: 'Visit Hobbee.FUN',
     linkUrl: 'https://hobbee.fun',
     logoUrl: '',
+    active: true,
+    startDate: '',
+    endDate: '',
+    priority: '1',
   });
-  const [matchForm, setMatchForm] = useState({ matchId: '1', teamAScore: '0', teamBScore: '0', status: 'upcoming' });
-  const [newsForm, setNewsForm] = useState({ title: '', source: 'Virtual Beehive Inc.', body: '', url: '' });
-  const [imageForm, setImageForm] = useState({ collection: 'stadiums', docId: '', imageUrl: '', coachImageUrl: '', playerImageUrl: '', jerseyHomeUrl: '', jerseyAwayUrl: '' });
+
+  const [matchForm, setMatchForm] = useState({
+    matchId: '1',
+    teamAScore: '0',
+    teamBScore: '0',
+    status: 'upcoming',
+    minute: '',
+    predictionLocked: false,
+    notes: '',
+  });
+
+  const [newsForm, setNewsForm] = useState({
+    newsId: '',
+    title: '',
+    source: 'Virtual Beehive Inc.',
+    body: '',
+    url: '',
+    active: true,
+    pinned: false,
+  });
+
+  const [imageForm, setImageForm] = useState({
+    collection: 'stadiums',
+    docId: '',
+    imageUrl: '',
+    stadiumImageUrl: '',
+    coachImageUrl: '',
+    playerImageUrl: '',
+    jerseyHomeUrl: '',
+    jerseyAwayUrl: '',
+    notes: '',
+  });
+
   const [adForm, setAdForm] = useState(DEFAULT_AD_SETTINGS);
+  const [adminNote, setAdminNote] = useState('');
 
   useEffect(() => {
-    async function loadAdminAdSettings() {
+    async function loadAdminSettings() {
       try {
-        const remote = await readDoc('appConfig', 'ads');
-        if (remote) setAdForm({ ...DEFAULT_AD_SETTINGS, ...remote });
+        const remoteAds = await readDoc('appConfig', 'ads');
+        if (remoteAds) setAdForm({ ...DEFAULT_AD_SETTINGS, ...remoteAds });
       } catch (e) {
         console.log('Admin ad settings load failed', e?.message || e);
       }
+
+      try {
+        const activeSponsor = await readDoc('sponsors', 'active');
+        if (activeSponsor) {
+          setSponsorForm((old) => ({
+            ...old,
+            ...activeSponsor,
+            active: activeSponsor.active !== false,
+            priority: String(activeSponsor.priority ?? old.priority ?? '1'),
+          }));
+        }
+      } catch (e) {
+        console.log('Admin sponsor load failed', e?.message || e);
+      }
     }
-    loadAdminAdSettings();
+    loadAdminSettings();
   }, []);
 
   async function requireAdmin() {
@@ -867,137 +766,234 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
     return true;
   }
 
+  async function logAdminAction(action, target, details = {}) {
+    if (!firebaseUser) return;
+    const id = `${Date.now()}_${String(firebaseUser.uid || 'admin').slice(0, 8)}`;
+    try {
+      await writeDoc('adminLogs', id, {
+        id,
+        action,
+        target,
+        details,
+        note: adminNote || '',
+        adminUid: firebaseUser.uid,
+        adminEmail: firebaseUser.email || '',
+        createdAt: serverTimestamp(),
+      }, false);
+    } catch (e) {
+      console.log('Admin log failed', e?.message || e);
+    }
+  }
+
   async function saveSponsor() {
     if (!(await requireAdmin())) return;
-    await writeDoc('sponsors', 'active', {
-      ...sponsorForm,
-      active: true,
+    const payload = {
+      name: sponsorForm.name || 'Sponsor',
+      message: sponsorForm.message || '',
+      callToAction: sponsorForm.callToAction || 'Learn More',
+      linkUrl: sponsorForm.linkUrl || '',
+      logoUrl: sponsorForm.logoUrl || '',
+      active: sponsorForm.active === true,
+      startDate: sponsorForm.startDate || '',
+      endDate: sponsorForm.endDate || '',
+      priority: Number(sponsorForm.priority || 1),
       updatedBy: firebaseUser.uid,
       updatedAt: serverTimestamp(),
-    });
-    Alert.alert('Sponsor saved', 'The active sponsor banner was saved to Firebase. Users will see it after the app reloads or refreshes sponsor data.');
+    };
+    await writeDoc('sponsors', 'active', payload);
+    await logAdminAction('save_sponsor', 'sponsors/active', payload);
+    Alert.alert('Sponsor saved', 'The active sponsor banner settings were saved to Firebase.');
   }
 
   async function saveMatchUpdate() {
     if (!(await requireAdmin())) return;
     const id = String(matchForm.matchId || '').trim();
     if (!id) { Alert.alert('Missing match ID', 'Enter a match number first.'); return; }
-    await writeDoc('matches', id, {
+    const status = matchForm.status || 'upcoming';
+    const predictionLocked = matchForm.predictionLocked === true || ['halftime', 'second_half', 'final'].includes(status);
+    const payload = {
       matchId: id,
       teamAScore: Number(matchForm.teamAScore || 0),
       teamBScore: Number(matchForm.teamBScore || 0),
-      status: matchForm.status || 'upcoming',
+      status,
+      minute: matchForm.minute || '',
+      predictionLocked,
+      notes: matchForm.notes || '',
       updatedBy: firebaseUser.uid,
       updatedAt: serverTimestamp(),
-    });
+    };
+    await writeDoc('matches', id, payload);
+    await logAdminAction('save_match', `matches/${id}`, payload);
     Alert.alert('Match update saved', `Match #${id} was saved to Firebase.`);
   }
 
   async function saveNewsItem() {
     if (!(await requireAdmin())) return;
     if (!newsForm.title || !newsForm.body) { Alert.alert('Missing news info', 'Enter a title and full story.'); return; }
-    const id = `news_${Date.now()}`;
-    await writeDoc('news', id, {
-      ...newsForm,
+    const id = String(newsForm.newsId || '').trim() || `news_${Date.now()}`;
+    const payload = {
       id,
-      active: true,
-      createdBy: firebaseUser.uid,
-      createdAt: serverTimestamp(),
+      title: newsForm.title,
+      source: newsForm.source || 'Virtual Beehive Inc.',
+      body: newsForm.body,
+      url: newsForm.url || '',
+      active: newsForm.active === true,
+      pinned: newsForm.pinned === true,
+      updatedBy: firebaseUser.uid,
       updatedAt: serverTimestamp(),
-    }, false);
-    setNewsForm({ title: '', source: 'Virtual Beehive Inc.', body: '', url: '' });
+      createdAt: serverTimestamp(),
+    };
+    await writeDoc('news', id, payload);
+    await logAdminAction('save_news', `news/${id}`, payload);
+    setNewsForm({ newsId: '', title: '', source: 'Virtual Beehive Inc.', body: '', url: '', active: true, pinned: false });
     Alert.alert('News saved', 'The news item was saved to Firebase.');
+  }
+
+  async function disableNewsItem() {
+    if (!(await requireAdmin())) return;
+    const id = String(newsForm.newsId || '').trim();
+    if (!id) { Alert.alert('Missing news ID', 'Enter the News ID to disable an existing item.'); return; }
+    const payload = { active: false, updatedBy: firebaseUser.uid, updatedAt: serverTimestamp() };
+    await writeDoc('news', id, payload);
+    await logAdminAction('disable_news', `news/${id}`, payload);
+    Alert.alert('News disabled', `${id} is now inactive.`);
   }
 
   async function saveImageLinks() {
     if (!(await requireAdmin())) return;
-    const collection = imageForm.collection || 'stadiums';
+    const collection = String(imageForm.collection || 'stadiums').trim();
     const id = String(imageForm.docId || '').trim();
     if (!id) { Alert.alert('Missing document ID', 'Enter a stadium/team/player document ID.'); return; }
-    await writeDoc(collection, id, {
-      imageUrl: imageForm.imageUrl || '',
+    const payload = {
+      imageUrl: imageForm.imageUrl || imageForm.stadiumImageUrl || '',
+      stadiumImageUrl: imageForm.stadiumImageUrl || imageForm.imageUrl || '',
       coachImageUrl: imageForm.coachImageUrl || '',
       playerImageUrl: imageForm.playerImageUrl || '',
       jerseyHomeUrl: imageForm.jerseyHomeUrl || '',
       jerseyAwayUrl: imageForm.jerseyAwayUrl || '',
+      notes: imageForm.notes || '',
       updatedBy: firebaseUser.uid,
       updatedAt: serverTimestamp(),
-    });
+    };
+    await writeDoc(collection, id, payload);
+    await logAdminAction('save_images', `${collection}/${id}`, payload);
     Alert.alert('Image links saved', `${collection}/${id} was saved to Firebase.`);
   }
 
   async function saveAdSettings() {
     if (!(await requireAdmin())) return;
-    await writeDoc('appConfig', 'ads', {
+    const payload = {
       adsEnabled: adForm.adsEnabled === true,
       useTestAds: adForm.useTestAds === true,
       nonPersonalized: adForm.nonPersonalized !== false,
       autoHideOnNoFill: adForm.autoHideOnNoFill !== false,
       updatedBy: firebaseUser.uid,
       updatedAt: serverTimestamp(),
-    });
-    Alert.alert('Ad settings saved', 'Ad placements will follow this Firebase setting after users reopen the app. If AdMob has no fill, the placement will hide automatically.');
+    };
+    await writeDoc('appConfig', 'ads', payload);
+    await logAdminAction('save_ad_settings', 'appConfig/ads', payload);
+    Alert.alert('Ad settings saved', 'Ad placements will follow this Firebase setting after users reopen the app.');
   }
 
-  const inputStyle = [styles.input, dark ? styles.inputDark : styles.inputLight];
+  const StatusButton = ({ value, label }) => (
+    <TouchableOpacity onPress={() => setMatchForm({ ...matchForm, status: value })} style={[styles.smallChip, matchForm.status === value ? styles.activeChip : null]}>
+      <Text style={{ color: matchForm.status === value ? '#000' : fg, fontWeight: '900' }}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  const ToggleButton = ({ label, active, onPress, color = COLORS.green }) => (
+    <ButtonPill label={`${label}: ${active ? 'ON' : 'OFF'}`} onPress={onPress} color={active ? color : '#64748b'} />
+  );
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title="Admin Control Panel" onBack={onClose} dark={dark} />
       <ScrollView style={{ padding: 16 }} contentContainerStyle={{ paddingBottom: 30 }}>
         <Text style={[styles.big, { color: fg }]}>Admin Control Panel</Text>
-        <Text style={{ color: fg, marginBottom: 12 }}>Only approved admins can save changes. This panel writes to Firebase so key app content can change without rebuilding the app.</Text>
+        <Text style={{ color: muted, marginBottom: 12 }}>Phase 2H adds stronger admin tools, active/inactive switches, manual match controls, content IDs, and admin activity logs.</Text>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.slate }] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Admin Note / Change Reason</Text>
+          <Text style={{ color: muted, marginBottom: 8 }}>Optional note saved with admin logs. Example: sponsor updated before launch, corrected match status, added news.</Text>
+          <TextInput placeholder="Admin note optional" placeholderTextColor="#94a3b8" value={adminNote} onChangeText={setAdminNote} style={inputStyle} />
+        </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }] }>
           <Text style={[styles.sectionTitle, { color: fg }]}>AdMob Display Control</Text>
-          <Text style={{ color: fg, marginBottom: 8 }}>Controls Google ad placements without rebuilding. Ads can stay allowed, but each slot will automatically hide if AdMob has no ad to fill.</Text>
-          <ButtonPill label={adForm.adsEnabled ? 'Ad placements: ON' : 'Ad placements: OFF'} onPress={() => setAdForm({ ...adForm, adsEnabled: !adForm.adsEnabled })} color={adForm.adsEnabled ? COLORS.green : '#64748b'} />
-          <ButtonPill label={adForm.useTestAds ? 'Test ads: ON' : 'Test ads: OFF'} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={adForm.useTestAds ? COLORS.amber : '#64748b'} />
-          <ButtonPill label={adForm.autoHideOnNoFill ? 'Auto-hide no-fill ads: ON' : 'Auto-hide no-fill ads: OFF'} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} color={adForm.autoHideOnNoFill ? COLORS.green : '#64748b'} />
-          <ButtonPill label={adForm.nonPersonalized ? 'Non-personalized request: ON' : 'Non-personalized request: OFF'} onPress={() => setAdForm({ ...adForm, nonPersonalized: !adForm.nonPersonalized })} color={COLORS.blue} />
+          <Text style={{ color: muted, marginBottom: 8 }}>Controls Google ad placements without rebuilding. Ad slots auto-hide when AdMob has no fill.</Text>
+          <ToggleButton label="Ad placements" active={adForm.adsEnabled} onPress={() => setAdForm({ ...adForm, adsEnabled: !adForm.adsEnabled })} />
+          <ToggleButton label="Test ads" active={adForm.useTestAds} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={COLORS.amber} />
+          <ToggleButton label="Auto-hide no-fill ads" active={adForm.autoHideOnNoFill} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} />
+          <ToggleButton label="Non-personalized request" active={adForm.nonPersonalized} onPress={() => setAdForm({ ...adForm, nonPersonalized: !adForm.nonPersonalized })} color={COLORS.blue} />
           <ButtonPill label="Save AdMob display settings" onPress={saveAdSettings} color={COLORS.green} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Sponsor Manager</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Sponsor Manager Plus</Text>
+          <ToggleButton label="Sponsor active" active={sponsorForm.active} onPress={() => setSponsorForm({ ...sponsorForm, active: !sponsorForm.active })} />
           <TextInput placeholder="Sponsor name" placeholderTextColor="#94a3b8" value={sponsorForm.name} onChangeText={(v)=>setSponsorForm({...sponsorForm,name:v})} style={inputStyle} />
           <TextInput placeholder="Sponsor message" placeholderTextColor="#94a3b8" value={sponsorForm.message} onChangeText={(v)=>setSponsorForm({...sponsorForm,message:v})} style={inputStyle} />
           <TextInput placeholder="Call to action" placeholderTextColor="#94a3b8" value={sponsorForm.callToAction} onChangeText={(v)=>setSponsorForm({...sponsorForm,callToAction:v})} style={inputStyle} />
           <TextInput placeholder="Link URL" placeholderTextColor="#94a3b8" value={sponsorForm.linkUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,linkUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Logo URL optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Start date optional, example 2026-06-01" placeholderTextColor="#94a3b8" value={sponsorForm.startDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,startDate:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="End date optional, example 2026-07-31" placeholderTextColor="#94a3b8" value={sponsorForm.endDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,endDate:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Priority" placeholderTextColor="#94a3b8" value={sponsorForm.priority} onChangeText={(v)=>setSponsorForm({...sponsorForm,priority:v})} style={inputStyle} keyboardType="number-pad" />
           <ButtonPill label="Save active sponsor" onPress={saveSponsor} color={COLORS.green} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Match Manager</Text>
-          <Text style={{ color: fg, marginBottom: 8 }}>Use this for manual score/status override until the live sports API is connected.</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Match Manager Plus</Text>
+          <Text style={{ color: muted, marginBottom: 8 }}>Use for manual score/status override until live sports API is connected.</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+            <StatusButton value="upcoming" label="Upcoming" />
+            <StatusButton value="live" label="Live" />
+            <StatusButton value="halftime" label="Halftime" />
+            <StatusButton value="second_half" label="2nd Half" />
+            <StatusButton value="final" label="Final" />
+            <StatusButton value="postponed" label="Postponed" />
+          </View>
+          <ToggleButton label="Prediction locked" active={matchForm.predictionLocked} onPress={() => setMatchForm({ ...matchForm, predictionLocked: !matchForm.predictionLocked })} color={COLORS.red} />
           <TextInput placeholder="Match ID / number" placeholderTextColor="#94a3b8" value={matchForm.matchId} onChangeText={(v)=>setMatchForm({...matchForm,matchId:v})} style={inputStyle} keyboardType="number-pad" />
           <TextInput placeholder="Team A score" placeholderTextColor="#94a3b8" value={matchForm.teamAScore} onChangeText={(v)=>setMatchForm({...matchForm,teamAScore:v})} style={inputStyle} keyboardType="number-pad" />
           <TextInput placeholder="Team B score" placeholderTextColor="#94a3b8" value={matchForm.teamBScore} onChangeText={(v)=>setMatchForm({...matchForm,teamBScore:v})} style={inputStyle} keyboardType="number-pad" />
-          <TextInput placeholder="Status: upcoming, live, halftime, final" placeholderTextColor="#94a3b8" value={matchForm.status} onChangeText={(v)=>setMatchForm({...matchForm,status:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Minute optional, example 32 or 90+4" placeholderTextColor="#94a3b8" value={matchForm.minute} onChangeText={(v)=>setMatchForm({...matchForm,minute:v})} style={inputStyle} />
+          <TextInput placeholder="Admin match notes optional" placeholderTextColor="#94a3b8" value={matchForm.notes} onChangeText={(v)=>setMatchForm({...matchForm,notes:v})} style={inputStyle} />
           <ButtonPill label="Save match update" onPress={saveMatchUpdate} color={COLORS.blue} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>News Manager</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>News Manager Plus</Text>
+          <Text style={{ color: muted, marginBottom: 8 }}>Use News ID to update or disable an existing item. Leave blank to create a new item.</Text>
+          <ToggleButton label="News active" active={newsForm.active} onPress={() => setNewsForm({ ...newsForm, active: !newsForm.active })} />
+          <ToggleButton label="Pinned" active={newsForm.pinned} onPress={() => setNewsForm({ ...newsForm, pinned: !newsForm.pinned })} color={COLORS.amber} />
+          <TextInput placeholder="News ID optional" placeholderTextColor="#94a3b8" value={newsForm.newsId} onChangeText={(v)=>setNewsForm({...newsForm,newsId:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="News title" placeholderTextColor="#94a3b8" value={newsForm.title} onChangeText={(v)=>setNewsForm({...newsForm,title:v})} style={inputStyle} />
           <TextInput placeholder="Source" placeholderTextColor="#94a3b8" value={newsForm.source} onChangeText={(v)=>setNewsForm({...newsForm,source:v})} style={inputStyle} />
           <TextInput placeholder="Full news story" placeholderTextColor="#94a3b8" value={newsForm.body} onChangeText={(v)=>setNewsForm({...newsForm,body:v})} style={[...inputStyle, { minHeight: 100, textAlignVertical: 'top' }]} multiline />
           <TextInput placeholder="Source URL optional" placeholderTextColor="#94a3b8" value={newsForm.url} onChangeText={(v)=>setNewsForm({...newsForm,url:v})} style={inputStyle} autoCapitalize="none" />
-          <ButtonPill label="Publish news item" onPress={saveNewsItem} color={COLORS.amber} />
+          <ButtonPill label="Save / update news item" onPress={saveNewsItem} color={COLORS.amber} />
+          <ButtonPill label="Disable existing news ID" onPress={disableNewsItem} color={COLORS.red} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL Manager</Text>
-          <Text style={{ color: fg, marginBottom: 8 }}>Add image links for stadiums, teams, coaches, players, and jerseys without uploading heavy images to Firebase Storage.</Text>
-          <TextInput placeholder="Collection: stadiums, teams, players" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
+          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL Manager Plus</Text>
+          <Text style={{ color: muted, marginBottom: 8 }}>Add image links for stadiums, teams, coaches, players, and jerseys without Firebase Storage.</Text>
+          <TextInput placeholder="Collection: stadiums, teams, players, coaches" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Document ID, example: metlife or argentina" placeholderTextColor="#94a3b8" value={imageForm.docId} onChangeText={(v)=>setImageForm({...imageForm,docId:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Main image URL" placeholderTextColor="#94a3b8" value={imageForm.imageUrl} onChangeText={(v)=>setImageForm({...imageForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Stadium image URL" placeholderTextColor="#94a3b8" value={imageForm.stadiumImageUrl} onChangeText={(v)=>setImageForm({...imageForm,stadiumImageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Coach image URL" placeholderTextColor="#94a3b8" value={imageForm.coachImageUrl} onChangeText={(v)=>setImageForm({...imageForm,coachImageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Player image URL" placeholderTextColor="#94a3b8" value={imageForm.playerImageUrl} onChangeText={(v)=>setImageForm({...imageForm,playerImageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Home jersey URL" placeholderTextColor="#94a3b8" value={imageForm.jerseyHomeUrl} onChangeText={(v)=>setImageForm({...imageForm,jerseyHomeUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Away jersey URL" placeholderTextColor="#94a3b8" value={imageForm.jerseyAwayUrl} onChangeText={(v)=>setImageForm({...imageForm,jerseyAwayUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Image notes optional" placeholderTextColor="#94a3b8" value={imageForm.notes} onChangeText={(v)=>setImageForm({...imageForm,notes:v})} style={inputStyle} />
           <ButtonPill label="Save image links" onPress={saveImageLinks} color={COLORS.green} />
+        </View>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Admin Logs</Text>
+          <Text style={{ color: muted }}>Every save action now writes to adminLogs with admin UID, email, action, target document, timestamp, and optional note. This helps track future changes without adding a separate admin website yet.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -1068,7 +1064,6 @@ export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [sponsor, setSponsor] = useState(null);
   const [adSettings, setAdSettings] = useState(DEFAULT_AD_SETTINGS);
-  const [matchOverrides, setMatchOverrides] = useState({});
   const fg = dark ? '#ffffff' : '#0f172a';
   const bg = dark ? COLORS.darkBg : COLORS.lightBg;
 
@@ -1131,21 +1126,6 @@ export default function App() {
       }
     }
     loadAdSettings();
-  }, []);
-
-
-  useEffect(() => {
-    async function loadMatchOverrides() {
-      try {
-        const snap = await getDocs(collection(db, 'matches'));
-        const next = {};
-        snap.forEach((item) => { next[String(item.id)] = item.data(); });
-        setMatchOverrides(next);
-      } catch (e) {
-        console.log('Match override load failed', e?.message || e);
-      }
-    }
-    loadMatchOverrides();
   }, []);
 
   useEffect(() => {
@@ -1309,10 +1289,10 @@ export default function App() {
       <Header dark={dark} fg={fg} setDark={setDark} setMenu={setMenu} />
       <SponsorBanner dark={dark} sponsor={sponsor} />
       <View style={{ flex: 1 }}>
-        {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} adSettings={adSettings} matchOverrides={matchOverrides} />}
+        {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} adSettings={adSettings} />}
         {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} adSettings={adSettings} />}
         {tab === 'news' && <News dark={dark} fg={fg} setNewsOpen={setNewsOpen} adSettings={adSettings} />}
-        {tab === 'top' && <TopPredictors dark={dark} fg={fg} adSettings={adSettings} predictions={predictions} matchOverrides={matchOverrides} profile={profile} />}
+        {tab === 'top' && <TopPredictors dark={dark} fg={fg} adSettings={adSettings} />}
       </View>
       <View style={[styles.nav, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#ffffff' }] }>
         {[['matches', 'Matches'], ['groups', 'Groups'], ['news', 'News'], ['top', 'Top']].map(([key, label]) => (
@@ -1388,8 +1368,6 @@ const styles = StyleSheet.create({
   big: { fontSize: 22, fontWeight: '900', marginBottom: 8 },
   nav: { flexDirection: 'row', gap: 4, padding: 8, borderTopWidth: 1, borderTopColor: '#1e293b' },
   navBtn: { flex: 1, alignItems: 'center', padding: 10, borderRadius: 14 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#334155' },
   card: { borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1 },
   matchCard: { borderRadius: 18, padding: 14, marginBottom: 10, borderWidth: 1 },
   cardDark: { backgroundColor: COLORS.darkCard, borderColor: COLORS.slate },
