@@ -649,38 +649,30 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
   );
 }
 
-function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose, firebaseUser, onEmailAuth, onSignOut }) {
-  const [signingIn, setSigningIn] = useState(false);
-  if (signingIn) {
-    return (
-      <SignInScreen
-        dark={dark}
-        currentProfile={profile}
-        onEmailAuth={async (p, mode) => {
-          const ok = await onEmailAuth(p, mode);
-          if (ok) setSigningIn(false);
-        }}
-        onBack={() => setSigningIn(false)}
-        onSave={async (p) => {
-          await saveProfile(p);
-          setSigningIn(false);
-        }}
-      />
-    );
-  }
-  const signedIn = !!firebaseUser || !!profile.email;
+function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, firebaseUser, onOpenSignIn, onSignOut }) {
+  const signedIn = !!firebaseUser || !!profile?.email;
+  const profileName = profile?.name || 'Not signed in';
+  const profileNickname = profile?.nickname || 'Not set';
+  const profileAge = profile?.age || 'Not set';
+  const profileSex = profile?.sex || 'Not set';
+  const profileCountry = profile?.country || profile?.location || 'Not detected';
+
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
+    <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }]}>
       <BackHeader title="Menu" onBack={onClose} dark={dark} />
-      <ScrollView style={{ padding: 16 }}>
-        {!signedIn ? <ButtonPill label="Sign in" onPress={() => setSigningIn(true)} color={COLORS.green} /> : <ButtonPill label="Sign out" onPress={onSignOut} color="#64748b" />}
+      <ScrollView style={{ padding: 16 }} contentContainerStyle={{ paddingBottom: 30 }}>
+        {!signedIn ? (
+          <ButtonPill label="Sign in" onPress={onOpenSignIn} color={COLORS.green} />
+        ) : (
+          <ButtonPill label="Sign out" onPress={onSignOut} color="#64748b" />
+        )}
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.big, { color: fg }]}>Account</Text>
-          <Text style={{ color: fg }}>Name: {profile.name || 'Not signed in'}</Text>
-          <Text style={{ color: fg }}>Nickname: {profile.nickname || 'Not set'}</Text>
-          <Text style={{ color: fg }}>Age: {profile.age || 'Not set'}</Text>
-          <Text style={{ color: fg }}>Sex: {profile.sex || 'Not set'}</Text>
-          <Text style={{ color: fg }}>Country: {profile.country || profile.location || 'Not detected'}</Text>
+          <Text style={{ color: fg }}>Name: {profileName}</Text>
+          <Text style={{ color: fg }}>Nickname: {profileNickname}</Text>
+          <Text style={{ color: fg }}>Age: {profileAge}</Text>
+          <Text style={{ color: fg }}>Sex: {profileSex}</Text>
+          <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Firebase: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
@@ -691,14 +683,14 @@ function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose, firebaseUs
           <Text style={[styles.sectionTitle, { color: fg, marginTop: 12 }]}>Delete Account</Text>
           <ButtonPill label="Delete local account data" onPress={() => saveProfile({})} color={COLORS.red} />
         </View>
-        {admin && (
-          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
+        {admin ? (
+          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Hidden Admin</Text>
-            <Text style={{ color: fg }}>Visible only when Firestore users/{uid}.isAdmin is true. Your admin access is now backend-controlled.</Text>
+            <Text style={{ color: fg }}>Visible only when Firestore users/{{uid}}.isAdmin is true. Your admin access is backend-controlled.</Text>
             <Text style={{ color: fg }}>Sponsor Manager: Hobbee.FUN banner fields placeholder.</Text>
             <Text style={{ color: fg }}>Match Manager: manual live score updates placeholder.</Text>
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -711,6 +703,7 @@ export default function App() {
   const [teamOpen, setTeamOpen] = useState(null);
   const [newsOpen, setNewsOpen] = useState(null);
   const [menu, setMenu] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [predictions, setPredictions] = useState({});
   const [bestPlayers, setBestPlayers] = useState({});
   const [champion, setChampion] = useState(null);
@@ -772,6 +765,7 @@ export default function App() {
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (authOpen) { setAuthOpen(false); return true; }
       if (menu) { setMenu(false); return true; }
       if (newsOpen) { setNewsOpen(null); return true; }
       if (teamOpen) { setTeamOpen(null); return true; }
@@ -779,7 +773,7 @@ export default function App() {
       return false;
     });
     return () => sub.remove();
-  }, [menu, newsOpen, teamOpen, selected]);
+  }, [authOpen, menu, newsOpen, teamOpen, selected]);
 
   async function savePrediction(id, a, b) {
     const savedAt = new Date().toISOString();
@@ -951,7 +945,35 @@ export default function App() {
         <NewsDetail item={newsOpen} onClose={() => setNewsOpen(null)} dark={dark} />
       </Modal>
       <Modal visible={menu} animationType="slide" onRequestClose={() => setMenu(false)}>
-        <MenuScreen dark={dark} fg={fg} profile={profile} saveProfile={saveProfile} admin={admin} firebaseUser={firebaseUser} onEmailAuth={handleEmailAuth} onSignOut={handleSignOut} onClose={() => setMenu(false)} />
+        <MenuScreen
+          dark={dark}
+          fg={fg}
+          profile={profile || {}}
+          saveProfile={saveProfile}
+          admin={admin}
+          firebaseUser={firebaseUser}
+          onOpenSignIn={() => {
+            setMenu(false);
+            setTimeout(() => setAuthOpen(true), 250);
+          }}
+          onSignOut={handleSignOut}
+          onClose={() => setMenu(false)}
+        />
+      </Modal>
+      <Modal visible={authOpen} animationType="slide" onRequestClose={() => setAuthOpen(false)}>
+        <SignInScreen
+          dark={dark}
+          currentProfile={profile || {}}
+          onEmailAuth={async (p, mode) => {
+            const ok = await handleEmailAuth(p, mode);
+            if (ok) setAuthOpen(false);
+          }}
+          onBack={() => setAuthOpen(false)}
+          onSave={async (p) => {
+            await saveProfile(p);
+            setAuthOpen(false);
+          }}
+        />
       </Modal>
     </SafeAreaView>
   );
