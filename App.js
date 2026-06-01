@@ -58,7 +58,7 @@ class ScreenErrorBoundary extends React.Component {
             <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }]}>
               <Text style={[styles.sectionTitle, { color: fg }]}>Temporary screen issue</Text>
               <Text style={{ color: fg }}>This screen was protected from crashing the app.</Text>
-              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 3E avatar picker</Text>
+              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 3G notification preferences</Text>
             </View>
           </View>
         </SafeAreaView>
@@ -131,13 +131,41 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
 
 
 const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
-const APP_SHARE_URL = 'https://hobbee.fun/worldcup-predictor';
+const APP_SHARE_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
 const APP_BRAND_LINE = 'A product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
 const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #WorldCupPredictor';
-const PRIVACY_POLICY_URL = 'https://hobbee.fun/worldcup-predictor-privacy-policy';
-const TERMS_URL = 'https://hobbee.fun/worldcup-predictor-terms';
-const DELETE_ACCOUNT_URL = 'https://hobbee.fun/worldcup-predictor-delete-account';
+const PRIVACY_POLICY_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-privacy-policy';
+const TERMS_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-terms';
+const DELETE_ACCOUNT_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-delete-account';
 const SUPPORT_EMAIL = 'danny@virtualbeehiveinc.com';
+
+
+// PHASE3G_NOTIFICATION_PREFS
+// Lightweight notification preference center. This does not send push notifications yet.
+// It prepares user controls before Expo/Firebase push notification wiring is added later.
+const NOTIFICATION_PREFS_KEY = 'worldcupPredictorNotificationPrefs:v1';
+const DEFAULT_NOTIFICATION_PREFS = {
+  matchReminders: true,
+  predictionReminders: true,
+  resultAlerts: true,
+  leaderboardAlerts: true,
+  sponsorUpdates: false,
+};
+
+async function loadNotificationPrefs() {
+  try {
+    const raw = await AsyncStorage.getItem(NOTIFICATION_PREFS_KEY);
+    return raw ? { ...DEFAULT_NOTIFICATION_PREFS, ...JSON.parse(raw) } : DEFAULT_NOTIFICATION_PREFS;
+  } catch {
+    return DEFAULT_NOTIFICATION_PREFS;
+  }
+}
+
+async function saveNotificationPrefs(nextPrefs) {
+  const safePrefs = { ...DEFAULT_NOTIFICATION_PREFS, ...(nextPrefs || {}) };
+  await AsyncStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(safePrefs));
+  return safePrefs;
+}
 
 async function openExternalUrl(url) {
   try {
@@ -168,7 +196,7 @@ async function emailDeleteRequest(profile = {}) {
 
 
 function brandedShareFooter() {
-  return `Download or learn more:
+  return `Download the app:
 ${APP_SHARE_URL}
 
 ${APP_SHARE_NAME}
@@ -439,6 +467,11 @@ function fmtDate(iso) {
 }
 
 function matchStatus(match) {
+  const status = String(match?.statusOverride || match?.status || '').toLowerCase();
+  if (status === 'final' || status === 'finished') return { label: 'Finished', color: '#94a3b8', locked: true, left: 0, prompt: 'Match finished. Prediction closed.' };
+  if (status === 'live') return { label: 'Live', color: COLORS.green, locked: false, left: 0, prompt: 'Prediction remains open until halftime.' };
+  if (status === 'halftime' || status === 'second_half') return { label: status === 'halftime' ? 'Halftime' : 'Second Half', color: '#f97316', locked: true, left: 0, prompt: 'Prediction locked after halftime.' };
+  if (match?.predictionLocked === true) return { label: 'Locked', color: '#64748b', locked: true, left: 0, prompt: 'Prediction locked by match status.' };
   const now = new Date();
   const start = new Date(match.dateTime);
   const lock = new Date(start.getTime() + 45 * 60 * 1000);
@@ -460,6 +493,74 @@ function fmtLeft(ms) {
 
 function fakeAverage(matchId, side) {
   return Math.round((matchId * side + side * 2) % 5);
+}
+
+
+
+function matchWithOverride(match, data = null) {
+  if (!data) return match;
+  const a = data.teamAScore ?? data.scoreA ?? data.homeScore ?? match.liveScore?.[0] ?? 0;
+  const b = data.teamBScore ?? data.scoreB ?? data.awayScore ?? match.liveScore?.[1] ?? 0;
+  return {
+    ...match,
+    ...data,
+    id: match.id,
+    matchNo: match.matchNo,
+    teamA: match.teamA,
+    teamB: match.teamB,
+    liveScore: [Number(a || 0), Number(b || 0)],
+    statusOverride: data.status || data.matchStatus || match.statusOverride || '',
+    predictionLocked: data.predictionLocked === true || match.predictionLocked === true,
+  };
+}
+
+function scorePredictionForMatch(match, prediction) {
+  if (!match || !prediction) return null;
+  const status = String(match.statusOverride || match.status || '').toLowerCase();
+  const isFinal = status === 'final' || status === 'finished' || matchStatus(match).label === 'Finished';
+  if (!isFinal) return null;
+  const actualA = Number(match.liveScore?.[0] ?? 0);
+  const actualB = Number(match.liveScore?.[1] ?? 0);
+  const predA = Number(prediction.a ?? prediction.teamAScore ?? 0);
+  const predB = Number(prediction.b ?? prediction.teamBScore ?? 0);
+  const exact = predA === actualA && predB === actualB;
+  const predDiff = Math.sign(predA - predB);
+  const actualDiff = Math.sign(actualA - actualB);
+  const correctOutcome = predDiff === actualDiff;
+  if (exact) return { type: 'exact', points: 50, title: 'Perfect prediction!', emoji: '🏆', message: `You predicted the exact score: ${match.teamA} ${actualA} - ${actualB} ${match.teamB}.` };
+  if (correctOutcome && actualDiff === 0) return { type: 'draw', points: 15, title: 'Correct draw prediction!', emoji: '🤝', message: `You predicted the match would end in a draw.` };
+  if (correctOutcome) return { type: 'winner', points: 10, title: 'Correct winner!', emoji: '🎉', message: `You predicted the correct match outcome.` };
+  return { type: 'miss', points: 0, title: 'Prediction result available', emoji: '⚽', message: `Final score: ${match.teamA} ${actualA} - ${actualB} ${match.teamB}.` };
+}
+
+function celebrationShareMessage(match, result, profile = {}) {
+  const score = `${match.teamA} ${match.liveScore?.[0] ?? 0} - ${match.liveScore?.[1] ?? 0} ${match.teamB}`;
+  return `${result.emoji} ${displayNick(profile)} scored ${result.points} points on ${APP_SHARE_NAME}!
+
+${result.title}
+Final: ${score}
+
+Make your own WorldCup 2026 predictions and compete on the leaderboard.
+
+${brandedShareFooter()}`;
+}
+
+function CelebrationCard({ match, prediction, profile, dark }) {
+  const fg = dark ? '#ffffff' : '#0f172a';
+  const result = scorePredictionForMatch(match, prediction);
+  if (!result || result.points <= 0) return null;
+  const message = celebrationShareMessage(match, result, profile);
+  return (
+    <View style={styles.celebrationCard}>
+      <Text style={styles.celebrationEmoji}>{result.emoji}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.celebrationTitle}>{result.title}</Text>
+        <Text style={{ color: fg }}>{result.message}</Text>
+        <Text style={styles.celebrationPoints}>+{result.points} points</Text>
+        <ShareCopyRow message={message} shareLabel="Share this win" copyLabel="Copy win text" title="Share prediction win" />
+      </View>
+    </View>
+  );
 }
 
 function ButtonPill({ label, onPress, disabled, color }) {
@@ -669,37 +770,54 @@ function StadiumCard({ match, dark, fg }) {
 function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, saveBestPlayer, adSettings, profile }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   const [tab, setTab] = useState('summary');
+  const [activeMatch, setActiveMatch] = useState(match);
+  useEffect(() => {
+    let alive = true;
+    async function loadMatchOverride() {
+      try {
+        const remote = await readDoc('matches', String(match.id));
+        if (alive && remote) setActiveMatch(matchWithOverride(match, remote));
+        else if (alive) setActiveMatch(match);
+      } catch (e) {
+        console.log('Match override load failed', e?.message || e);
+        if (alive) setActiveMatch(match);
+      }
+    }
+    loadMatchOverride();
+    return () => { alive = false; };
+  }, [match.id]);
   const saved = predictions[String(match.id)] || { a: 0, b: 0 };
   const [a, setA] = useState(saved.a);
   const [b, setB] = useState(saved.b);
   const selectedBest = bestPlayers[String(match.id)];
-  const status = matchStatus(match);
-  const shareMessage = matchShareMessage(match, a, b, profile);
+  const status = matchStatus(activeMatch);
+  const shareMessage = matchShareMessage(activeMatch, a, b, profile);
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
-      <BackHeader title={`${match.teamA} vs ${match.teamB}`} onBack={onClose} dark={dark} />
+      <BackHeader title={`${activeMatch.teamA} vs ${activeMatch.teamB}`} onBack={onClose} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
-        <StadiumCard match={match} dark={dark} fg={fg} />
+        <StadiumCard match={activeMatch} dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: status.color }] }>
           <Text style={{ color: status.color, fontWeight: '900' }}>{status.label}</Text>
-          <Text style={[styles.big, { color: fg }]}>{match.teamA} vs {match.teamB}</Text>
+          <Text style={[styles.big, { color: fg }]}>{activeMatch.teamA} vs {activeMatch.teamB}</Text>
           <Text style={{ color: fg }}>Prediction time left: {fmtLeft(status.left)}</Text>
           <Text style={{ color: fg }}>{status.prompt}</Text>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-            <ScoreStepper label={match.teamA} value={a} setValue={setA} disabled={status.locked} />
-            <ScoreStepper label={match.teamB} value={b} setValue={setB} disabled={status.locked} />
+            <ScoreStepper label={activeMatch.teamA} value={a} setValue={setA} disabled={status.locked} />
+            <ScoreStepper label={activeMatch.teamB} value={b} setValue={setB} disabled={status.locked} />
           </View>
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
           <ShareCopyRow message={shareMessage} shareLabel="Share this prediction" copyLabel="Copy prediction text" title="Share prediction" />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
-            <Text style={styles.blackScore}>{match.teamA} {fakeAverage(match.id, 1)} - {fakeAverage(match.id, 2)} {match.teamB}</Text>
+            <Text style={styles.blackScore}>{activeMatch.teamA} {fakeAverage(activeMatch.id, 1)} - {fakeAverage(activeMatch.id, 2)} {activeMatch.teamB}</Text>
             <Text style={styles.blackSmall}>Placeholder until backend global averages are connected.</Text>
           </View>
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Live Score</Text>
-            <Text style={styles.blackScore}>{match.teamA} {match.liveScore[0]} - {match.liveScore[1]} {match.teamB}</Text>
+            <Text style={styles.blackScore}>{activeMatch.teamA} {activeMatch.liveScore[0]} - {activeMatch.liveScore[1]} {activeMatch.teamB}</Text>
           </View>
+          <CelebrationCard match={activeMatch} prediction={saved} profile={profile} dark={dark} />
         </View>
         <AdBox dark={dark} tone={1} placement="matches" adSettings={adSettings} />
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
@@ -712,7 +830,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <Text style={[styles.sectionTitle, { color: fg }]}>Best player of the game</Text>
             <Text style={{ color: fg }}>Choose anytime before or after the match.</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-              {[...((TEAM_DETAILS[match.teamA] || {}).players || []), ...((TEAM_DETAILS[match.teamB] || {}).players || [])].slice(0, 10).map((p) => (
+              {[...((TEAM_DETAILS[activeMatch.teamA] || {}).players || []), ...((TEAM_DETAILS[activeMatch.teamB] || {}).players || [])].slice(0, 10).map((p) => (
                 <TouchableOpacity key={`${p.name}-${p.number}`} onPress={() => saveBestPlayer(match.id, p.name)} style={[styles.bestPlayerPill, selectedBest === p.name && { backgroundColor: COLORS.green }]}>
                   <Text style={{ fontWeight: '900', color: selectedBest === p.name ? '#000' : fg }}>#{p.number} {p.name}</Text>
                 </TouchableOpacity>
@@ -720,11 +838,11 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             </View>
           </View>
         )}
-        {tab === 'compare' && <TeamCompare a={match.teamA} b={match.teamB} dark={dark} setTeamOpen={setTeamOpen} />}
+        {tab === 'compare' && <TeamCompare a={activeMatch.teamA} b={activeMatch.teamB} dark={dark} setTeamOpen={setTeamOpen} />}
         {tab === 'head' && (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Previous matches</Text>
-            <Text style={{ color: fg }}>{match.previous}</Text>
+            <Text style={{ color: fg }}>{activeMatch.previous}</Text>
             <AdBox dark={dark} tone={2} placement="matches" adSettings={adSettings} />
           </View>
         )}
@@ -1426,6 +1544,65 @@ function AvatarPicker({ dark, fg, profile = {}, onPick }) {
   );
 }
 
+
+function NotificationSettingsCard({ dark, fg }) {
+  const [prefs, setPrefs] = useState(DEFAULT_NOTIFICATION_PREFS);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    loadNotificationPrefs().then((stored) => {
+      if (!active) return;
+      setPrefs(stored);
+      setLoaded(true);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const togglePref = async (key) => {
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    await saveNotificationPrefs(next);
+  };
+
+  const rows = [
+    ['matchReminders', 'Match reminders', 'Remind me before important WorldCup matches.'],
+    ['predictionReminders', 'Prediction reminders', 'Remind me to make predictions before matches lock.'],
+    ['resultAlerts', 'Prediction result alerts', 'Notify me when match results are available.'],
+    ['leaderboardAlerts', 'Leaderboard updates', 'Notify me about leaderboard movement.'],
+    ['sponsorUpdates', 'Sponsor and app updates', 'Optional updates from sponsors or Virtual Beehive Inc.'],
+  ];
+
+  return (
+    <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }]}>
+      <Text style={[styles.sectionTitle, { color: fg }]}>Notifications</Text>
+      <Text style={{ color: fg, marginBottom: 8 }}>
+        Choose which reminders you want. Push notifications will be connected in a later update; these settings prepare your preferences now.
+      </Text>
+      {rows.map(([key, label, help]) => (
+        <TouchableOpacity
+          key={key}
+          onPress={() => togglePref(key)}
+          style={{
+            borderWidth: 1,
+            borderColor: prefs[key] ? COLORS.green : '#475569',
+            borderRadius: 14,
+            padding: 10,
+            marginTop: 8,
+            backgroundColor: prefs[key] ? 'rgba(34,197,94,0.12)' : 'transparent',
+          }}
+        >
+          <Text style={{ color: fg, fontWeight: '900' }}>{prefs[key] ? 'ON' : 'OFF'} • {label}</Text>
+          <Text style={{ color: fg, opacity: 0.85, marginTop: 3 }}>{help}</Text>
+        </TouchableOpacity>
+      ))}
+      <Text style={{ color: COLORS.blue, fontWeight: '900', marginTop: 10 }}>
+        Build: Phase 3G notification preferences
+      </Text>
+    </View>
+  );
+}
+
 function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, firebaseUser, onOpenSignIn, onSignOut, onOpenAdmin }) {
   const safeProfile = profile && typeof profile === 'object' ? profile : {};
   const signedIn = !!firebaseUser || !!safeProfile?.email;
@@ -1465,7 +1642,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
-          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 3E avatar picker</Text>
+          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 3G notification preferences</Text>
         </View>
         <AvatarPicker dark={dark} fg={fg} profile={safeProfile} onPick={chooseAvatar} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
@@ -1473,6 +1650,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Share FIFA WorldCup 2026 Predictor with your social networks, or copy the message and paste it anywhere.</Text>
           <ShareCopyRow message={inviteMessage} shareLabel="Share app invite" copyLabel="Copy invite text" title="Invite friends" />
         </View>
+        <NotificationSettingsCard dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Legal</Text>
           <Text style={{ color: fg }}>Review how FIFA WorldCup 2026 Predictor handles account data, predictions, ads, leaderboard activity, and deletion requests.</Text>
@@ -1851,6 +2029,11 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: COLORS.amber, padding: 10, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 8, flex: 1 },
   btnText: { fontWeight: '900', color: '#000000', textAlign: 'center' },
   disabled: { opacity: 0.45 },
+
+  celebrationCard: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', borderWidth: 2, borderColor: '#fbbf24', borderRadius: 18, padding: 14, marginTop: 14, backgroundColor: 'rgba(251,191,36,0.14)' },
+  celebrationEmoji: { fontSize: 42 },
+  celebrationTitle: { color: '#fbbf24', fontSize: 18, fontWeight: '900', marginBottom: 4 },
+  celebrationPoints: { color: '#22c55e', fontWeight: '900', marginTop: 6 },
   shareBox: { borderWidth: 1, borderColor: '#38bdf8', borderRadius: 14, padding: 10, marginTop: 12, marginBottom: 8, backgroundColor: 'rgba(56,189,248,0.08)' },
   shareHint: { color: '#38bdf8', fontWeight: '800', marginBottom: 4, fontSize: 12 },
   shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
