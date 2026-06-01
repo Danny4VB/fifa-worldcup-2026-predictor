@@ -51,6 +51,25 @@ const DEFAULT_AD_SETTINGS = {
   autoHideOnNoFill: true,
 };
 
+// Phase 2G Firebase cost-control defaults.
+// Keep high-traffic reads small and cache low-change documents on device.
+const COST_CONTROL = {
+  sponsorCacheMs: 1000 * 60 * 60 * 6,
+  adConfigCacheMs: 1000 * 60 * 60 * 6,
+  shortCacheMs: 1000 * 60 * 5,
+  leaderboardPageSize: 25,
+  maxNewsItems: 20,
+  maxAdminLogPreview: 25,
+};
+
+function cacheKeyForDoc(path, id) {
+  return `cache:v2g:${path}:${id}`;
+}
+
+function safeJsonParse(value, fallback = null) {
+  try { return value ? JSON.parse(value) : fallback; } catch { return fallback; }
+}
+
 function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
   if (settings?.useTestAds) return TestIds.BANNER;
   return ADMOB_AD_UNITS[placement] || ADMOB_AD_UNITS.matches;
@@ -75,8 +94,32 @@ async function readDoc(path, id) {
   return snap.exists() ? snap.data() : null;
 }
 
+async function readDocCached(path, id, ttlMs = COST_CONTROL.shortCacheMs) {
+  const key = cacheKeyForDoc(path, id);
+  const cached = safeJsonParse(await AsyncStorage.getItem(key));
+  const now = Date.now();
+
+  if (cached?.savedAt && now - cached.savedAt < ttlMs) {
+    return cached.data || null;
+  }
+
+  try {
+    const fresh = await readDoc(path, id);
+    if (fresh) {
+      await AsyncStorage.setItem(key, JSON.stringify({ savedAt: now, data: fresh }));
+      return fresh;
+    }
+  } catch (e) {
+    console.log(`Cached read fallback for ${path}/${id}`, e?.message || e);
+  }
+
+  return cached?.data || null;
+}
+
 async function writeDoc(path, id, data, merge = true) {
   await setDoc(doc(db, path, id), data, { merge });
+  // Invalidate local cache for admin-controlled docs so the next app open reads fresh values.
+  try { await AsyncStorage.removeItem(cacheKeyForDoc(path, id)); } catch {}
 }
 
 const GROUPS = {
@@ -634,14 +677,16 @@ function TeamDetail({ team, onClose, dark }) {
 }
 
 function TopPredictors({ dark, fg, adSettings }) {
+  const [visibleCount, setVisibleCount] = useState(COST_CONTROL.leaderboardPageSize);
   const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
+  const visibleList = list.slice(0, visibleCount);
   return (
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
-      <Text style={{ color: fg }}>Shows everyone with at least one correct prediction. Emails and private data are hidden.</Text>
-      {list.map((u, i) => (
+      <Text style={{ color: fg }}>Cost-controlled leaderboard view. The app loads a limited page first, then users can load more.</Text>
+      {visibleList.map((u, i) => (
         <React.Fragment key={u.nick}>
-          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}> 
             <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
             <Text style={{ fontSize: 28 }}>{u.photo}</Text>
             <View style={{ flex: 1 }}>
@@ -649,9 +694,16 @@ function TopPredictors({ dark, fg, adSettings }) {
               <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
             </View>
           </View>
-          {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
+          {(i + 1) % 3 === 0 && i !== visibleList.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
         </React.Fragment>
       ))}
+      {visibleCount < list.length ? (
+        <ButtonPill
+          label={`Load ${Math.min(COST_CONTROL.leaderboardPageSize, list.length - visibleCount)} more predictors`}
+          onPress={() => setVisibleCount(Math.min(list.length, visibleCount + COST_CONTROL.leaderboardPageSize))}
+          color={COLORS.blue}
+        />
+      ) : null}
     </ScrollView>
   );
 }
@@ -991,6 +1043,13 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
           <ButtonPill label="Save image links" onPress={saveImageLinks} color={COLORS.green} />
         </View>
 
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Firebase Cost Control</Text>
+          <Text style={{ color: muted }}>Phase 2G keeps app-config and sponsor reads cached on the device, limits leaderboard loading, and avoids reading large prediction collections from the client.</Text>
+          <Text style={{ color: muted, marginTop: 8 }}>Recommended Firebase budget alerts: $5, $10, $25, $50, $100.</Text>
+          <Text style={{ color: muted, marginTop: 8 }}>Future real leaderboard should read only summary docs, not every prediction document.</Text>
+        </View>
+
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }] }>
           <Text style={[styles.sectionTitle, { color: fg }]}>Admin Logs</Text>
           <Text style={{ color: muted }}>Every save action now writes to adminLogs with admin UID, email, action, target document, timestamp, and optional note. This helps track future changes without adding a separate admin website yet.</Text>
@@ -1107,7 +1166,7 @@ export default function App() {
   useEffect(() => {
     async function loadSponsor() {
       try {
-        const active = await readDoc('sponsors', 'active');
+        const active = await readDocCached('sponsors', 'active', COST_CONTROL.sponsorCacheMs);
         if (active) setSponsor(active);
       } catch (e) {
         console.log('Sponsor load failed', e?.message || e);
@@ -1119,7 +1178,7 @@ export default function App() {
   useEffect(() => {
     async function loadAdSettings() {
       try {
-        const remote = await readDoc('appConfig', 'ads');
+        const remote = await readDocCached('appConfig', 'ads', COST_CONTROL.adConfigCacheMs);
         if (remote) setAdSettings({ ...DEFAULT_AD_SETTINGS, ...remote });
       } catch (e) {
         console.log('Ad settings load failed', e?.message || e);
