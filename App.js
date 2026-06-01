@@ -42,12 +42,17 @@ const ADMOB_AD_UNITS = {
   groups: 'ca-app-pub-7388735966130444/6526076590',
 };
 
-// Keep this true while testing so AdMob does not flag the account.
-// Switch to false only after the app is ready for production review.
-const USE_ADMOB_TEST_ADS = true;
+// For public builds, keep test ads off. Ad slots will automatically hide if AdMob has no fill.
+const USE_ADMOB_TEST_ADS = false;
+const DEFAULT_AD_SETTINGS = {
+  adsEnabled: true,
+  useTestAds: USE_ADMOB_TEST_ADS,
+  nonPersonalized: true,
+  autoHideOnNoFill: true,
+};
 
-function getAdUnitId(placement = 'matches') {
-  if (USE_ADMOB_TEST_ADS) return TestIds.BANNER;
+function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
+  if (settings?.useTestAds) return TestIds.BANNER;
   return ADMOB_AD_UNITS[placement] || ADMOB_AD_UNITS.matches;
 }
 
@@ -293,24 +298,26 @@ function SponsorBanner({ dark, sponsor }) {
   );
 }
 
-function AdBox({ dark, tone = 0, placement = 'matches' }) {
+function AdBox({ dark, tone = 0, placement = 'matches', adSettings = DEFAULT_AD_SETTINGS }) {
+  const settings = { ...DEFAULT_AD_SETTINGS, ...(adSettings || {}) };
   const backgrounds = dark ? ['#0b1220', '#111827', '#172033'] : ['#f1f5f9', '#fff7ed', '#ecfeff'];
   const borders = dark ? ['#334155', '#475569', '#14532d'] : ['#cbd5e1', '#fed7aa', '#a5f3fc'];
+  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  if (!settings.adsEnabled || (failed && settings.autoHideOnNoFill)) return null;
+
   return (
-    <View style={[styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }]}> 
-      <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900', marginBottom: 6 }}>Advertisement</Text>
-      {!failed ? (
-        <BannerAd
-          unitId={getAdUnitId(placement)}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-          onAdFailedToLoad={() => setFailed(true)}
-        />
-      ) : (
-        <Text style={{ color: dark ? '#94a3b8' : '#64748b', fontSize: 12, marginTop: 4 }}>Google AdMob test ad area</Text>
-      )}
-      {USE_ADMOB_TEST_ADS ? <Text style={{ color: dark ? '#64748b' : '#94a3b8', fontSize: 10, marginTop: 4 }}>Test ads enabled</Text> : null}
+    <View style={loaded ? [styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }] : styles.hiddenAdProbe}> 
+      {loaded ? <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900', marginBottom: 6 }}>Advertisement</Text> : null}
+      <BannerAd
+        unitId={getAdUnitId(placement, settings)}
+        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+        requestOptions={{ requestNonPersonalizedAdsOnly: settings.nonPersonalized !== false }}
+        onAdLoaded={() => setLoaded(true)}
+        onAdFailedToLoad={() => setFailed(true)}
+      />
+      {loaded && settings.useTestAds ? <Text style={{ color: dark ? '#64748b' : '#94a3b8', fontSize: 10, marginTop: 4 }}>Test ads enabled</Text> : null}
     </View>
   );
 }
@@ -333,12 +340,12 @@ function Header({ dark, fg, setDark, setMenu }) {
   );
 }
 
-function Matches({ dark, fg, predictions, setSelected }) {
+function Matches({ dark, fg, predictions, setSelected, adSettings }) {
   return (
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.big, { color: fg }]}>Matches</Text>
       <Text style={{ color: fg, marginBottom: 8 }}>All 104 tournament matches are listed. Tap any match to predict before halftime.</Text>
-      <AdBox dark={dark} tone={0} placement="matches" />
+      <AdBox dark={dark} tone={0} placement="matches" adSettings={adSettings} />
       {FIXTURES.map((match, index) => {
         const st = matchStatus(match);
         const key = String(match.id);
@@ -355,7 +362,7 @@ function Matches({ dark, fg, predictions, setSelected }) {
               <Text style={{ color: fg }}>{match.stadium} • {match.city}</Text>
               {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
             </TouchableOpacity>
-            {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="matches" />}
+            {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="matches" adSettings={adSettings} />}
           </View>
         );
       })}
@@ -390,7 +397,7 @@ function StadiumCard({ match, dark, fg }) {
   );
 }
 
-function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, saveBestPlayer }) {
+function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, saveBestPlayer, adSettings }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   const [tab, setTab] = useState('summary');
   const saved = predictions[String(match.id)] || { a: 0, b: 0 };
@@ -423,7 +430,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <Text style={styles.blackScore}>{match.teamA} {match.liveScore[0]} - {match.liveScore[1]} {match.teamB}</Text>
           </View>
         </View>
-        <AdBox dark={dark} tone={1} placement="matches" />
+        <AdBox dark={dark} tone={1} placement="matches" adSettings={adSettings} />
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
           {['summary', 'compare', 'head'].map((t) => (
             <ButtonPill key={t} label={t === 'summary' ? 'Summary' : t === 'compare' ? 'Teams' : 'History'} onPress={() => setTab(t)} color={tab === t ? COLORS.amber : COLORS.slate} />
@@ -447,7 +454,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Previous matches</Text>
             <Text style={{ color: fg }}>{match.previous}</Text>
-            <AdBox dark={dark} tone={2} placement="matches" />
+            <AdBox dark={dark} tone={2} placement="matches" adSettings={adSettings} />
           </View>
         )}
       </ScrollView>
@@ -529,7 +536,7 @@ function KnockoutBracket({ dark, fg }) {
   );
 }
 
-function Groups({ dark, fg, champion, chooseChampion, setTeamOpen }) {
+function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings }) {
   return (
     <ScrollView style={{ padding: 12 }}>
       <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }]}>
@@ -549,7 +556,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen }) {
               </TouchableOpacity>
             ))}
           </View>
-          {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="groups" />}
+          {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="groups" adSettings={adSettings} />}
         </View>
       ))}
       <KnockoutBracket dark={dark} fg={fg} />
@@ -557,7 +564,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen }) {
   );
 }
 
-function News({ dark, fg, setNewsOpen }) {
+function News({ dark, fg, setNewsOpen, adSettings }) {
   return (
     <ScrollView style={{ padding: 12 }}>
       {NEWS.map((n, index) => (
@@ -567,7 +574,7 @@ function News({ dark, fg, setNewsOpen }) {
             <Text style={{ color: COLORS.amber }}>{n.source} • {n.date}</Text>
             <Text style={{ color: fg }}>Tap to read full news</Text>
           </TouchableOpacity>
-          {index === 0 && <AdBox dark={dark} tone={1} placement="news" />}
+          {index === 0 && <AdBox dark={dark} tone={1} placement="news" adSettings={adSettings} />}
         </View>
       ))}
     </ScrollView>
@@ -626,7 +633,7 @@ function TeamDetail({ team, onClose, dark }) {
   );
 }
 
-function TopPredictors({ dark, fg }) {
+function TopPredictors({ dark, fg, adSettings }) {
   const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
   return (
     <ScrollView style={{ padding: 12 }}>
@@ -642,7 +649,7 @@ function TopPredictors({ dark, fg }) {
               <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
             </View>
           </View>
-          {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} placement="top" />}
+          {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
         </React.Fragment>
       ))}
     </ScrollView>
@@ -685,6 +692,19 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
   const [matchForm, setMatchForm] = useState({ matchId: '1', teamAScore: '0', teamBScore: '0', status: 'upcoming' });
   const [newsForm, setNewsForm] = useState({ title: '', source: 'Virtual Beehive Inc.', body: '', url: '' });
   const [imageForm, setImageForm] = useState({ collection: 'stadiums', docId: '', imageUrl: '', coachImageUrl: '', playerImageUrl: '', jerseyHomeUrl: '', jerseyAwayUrl: '' });
+  const [adForm, setAdForm] = useState(DEFAULT_AD_SETTINGS);
+
+  useEffect(() => {
+    async function loadAdminAdSettings() {
+      try {
+        const remote = await readDoc('appConfig', 'ads');
+        if (remote) setAdForm({ ...DEFAULT_AD_SETTINGS, ...remote });
+      } catch (e) {
+        console.log('Admin ad settings load failed', e?.message || e);
+      }
+    }
+    loadAdminAdSettings();
+  }, []);
 
   async function requireAdmin() {
     if (!firebaseUser || !admin) {
@@ -753,6 +773,19 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
     Alert.alert('Image links saved', `${collection}/${id} was saved to Firebase.`);
   }
 
+  async function saveAdSettings() {
+    if (!(await requireAdmin())) return;
+    await writeDoc('appConfig', 'ads', {
+      adsEnabled: adForm.adsEnabled === true,
+      useTestAds: adForm.useTestAds === true,
+      nonPersonalized: adForm.nonPersonalized !== false,
+      autoHideOnNoFill: adForm.autoHideOnNoFill !== false,
+      updatedBy: firebaseUser.uid,
+      updatedAt: serverTimestamp(),
+    });
+    Alert.alert('Ad settings saved', 'Ad placements will follow this Firebase setting after users reopen the app. If AdMob has no fill, the placement will hide automatically.');
+  }
+
   const inputStyle = [styles.input, dark ? styles.inputDark : styles.inputLight];
 
   return (
@@ -761,6 +794,16 @@ function AdminScreen({ dark, onClose, firebaseUser, admin }) {
       <ScrollView style={{ padding: 16 }} contentContainerStyle={{ paddingBottom: 30 }}>
         <Text style={[styles.big, { color: fg }]}>Admin Control Panel</Text>
         <Text style={{ color: fg, marginBottom: 12 }}>Only approved admins can save changes. This panel writes to Firebase so key app content can change without rebuilding the app.</Text>
+
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }] }>
+          <Text style={[styles.sectionTitle, { color: fg }]}>AdMob Display Control</Text>
+          <Text style={{ color: fg, marginBottom: 8 }}>Controls Google ad placements without rebuilding. Ads can stay allowed, but each slot will automatically hide if AdMob has no ad to fill.</Text>
+          <ButtonPill label={adForm.adsEnabled ? 'Ad placements: ON' : 'Ad placements: OFF'} onPress={() => setAdForm({ ...adForm, adsEnabled: !adForm.adsEnabled })} color={adForm.adsEnabled ? COLORS.green : '#64748b'} />
+          <ButtonPill label={adForm.useTestAds ? 'Test ads: ON' : 'Test ads: OFF'} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={adForm.useTestAds ? COLORS.amber : '#64748b'} />
+          <ButtonPill label={adForm.autoHideOnNoFill ? 'Auto-hide no-fill ads: ON' : 'Auto-hide no-fill ads: OFF'} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} color={adForm.autoHideOnNoFill ? COLORS.green : '#64748b'} />
+          <ButtonPill label={adForm.nonPersonalized ? 'Non-personalized request: ON' : 'Non-personalized request: OFF'} onPress={() => setAdForm({ ...adForm, nonPersonalized: !adForm.nonPersonalized })} color={COLORS.blue} />
+          <ButtonPill label="Save AdMob display settings" onPress={saveAdSettings} color={COLORS.green} />
+        </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
           <Text style={[styles.sectionTitle, { color: fg }]}>Sponsor Manager</Text>
@@ -871,6 +914,7 @@ export default function App() {
   const [admin, setAdmin] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [sponsor, setSponsor] = useState(null);
+  const [adSettings, setAdSettings] = useState(DEFAULT_AD_SETTINGS);
   const fg = dark ? '#ffffff' : '#0f172a';
   const bg = dark ? COLORS.darkBg : COLORS.lightBg;
 
@@ -921,6 +965,18 @@ export default function App() {
       }
     }
     loadSponsor();
+  }, []);
+
+  useEffect(() => {
+    async function loadAdSettings() {
+      try {
+        const remote = await readDoc('appConfig', 'ads');
+        if (remote) setAdSettings({ ...DEFAULT_AD_SETTINGS, ...remote });
+      } catch (e) {
+        console.log('Ad settings load failed', e?.message || e);
+      }
+    }
+    loadAdSettings();
   }, []);
 
   useEffect(() => {
@@ -1084,10 +1140,10 @@ export default function App() {
       <Header dark={dark} fg={fg} setDark={setDark} setMenu={setMenu} />
       <SponsorBanner dark={dark} sponsor={sponsor} />
       <View style={{ flex: 1 }}>
-        {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} />}
-        {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} />}
-        {tab === 'news' && <News dark={dark} fg={fg} setNewsOpen={setNewsOpen} />}
-        {tab === 'top' && <TopPredictors dark={dark} fg={fg} />}
+        {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} adSettings={adSettings} />}
+        {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} adSettings={adSettings} />}
+        {tab === 'news' && <News dark={dark} fg={fg} setNewsOpen={setNewsOpen} adSettings={adSettings} />}
+        {tab === 'top' && <TopPredictors dark={dark} fg={fg} adSettings={adSettings} />}
       </View>
       <View style={[styles.nav, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#ffffff' }] }>
         {[['matches', 'Matches'], ['groups', 'Groups'], ['news', 'News'], ['top', 'Top']].map(([key, label]) => (
@@ -1097,7 +1153,7 @@ export default function App() {
         ))}
       </View>
       <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
-        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} bestPlayers={bestPlayers} saveBestPlayer={saveBestPlayer} />
+        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} bestPlayers={bestPlayers} saveBestPlayer={saveBestPlayer} adSettings={adSettings} />
       </Modal>
       <Modal visible={!!teamOpen} animationType="slide" onRequestClose={() => setTeamOpen(null)}>
         <TeamDetail team={teamOpen} onClose={() => setTeamOpen(null)} dark={dark} />
@@ -1176,7 +1232,8 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.45 },
   sponsor: { height: 42, justifyContent: 'center', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
   sponsorText: { fontWeight: '900', fontSize: 15, color: COLORS.amber, width: 900 },
-  adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10 },
+  adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10, overflow: 'hidden' },
+  hiddenAdProbe: { height: 1, opacity: 0, overflow: 'hidden' },
   stepper: { flex: 1, alignItems: 'center', backgroundColor: '#02061788', padding: 10, borderRadius: 14 },
   stepperLabel: { fontWeight: '900', color: COLORS.amber, textAlign: 'center' },
   stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
