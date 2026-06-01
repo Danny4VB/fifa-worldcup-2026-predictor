@@ -15,6 +15,9 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const COLORS = {
   darkBg: '#070b12',
@@ -28,6 +31,30 @@ const COLORS = {
   slate: '#334155',
   soft: '#1e293b',
 };
+
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyCTAXgkM7zUdB3jajE3SRfcdvMLOkgW5_w',
+  authDomain: 'fifa-worldcup-2026-predictor.firebaseapp.com',
+  projectId: 'fifa-worldcup-2026-predictor',
+  storageBucket: 'fifa-worldcup-2026-predictor.firebasestorage.app',
+  messagingSenderId: '560795586407',
+  appId: '1:560795586407:web:f9cacd1bcb66b2c8c9a9c2',
+  measurementId: 'G-ZEFX4R6LTZ',
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+
+async function readDoc(path, id) {
+  const snap = await getDoc(doc(db, path, id));
+  return snap.exists() ? snap.data() : null;
+}
+
+async function writeDoc(path, id, data, merge = true) {
+  await setDoc(doc(db, path, id), data, { merge });
+}
 
 const GROUPS = {
   A: ['Mexico', 'South Africa', 'Korea Republic', 'Czechia'],
@@ -226,21 +253,24 @@ function BackHeader({ title, onBack, dark }) {
   );
 }
 
-function SponsorBanner({ dark }) {
+function SponsorBanner({ dark, sponsor }) {
   const x = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(x, { toValue: -430, duration: 9500, useNativeDriver: true }),
+        Animated.timing(x, { toValue: -520, duration: 11000, useNativeDriver: true }),
         Animated.timing(x, { toValue: 0, duration: 0, useNativeDriver: true }),
       ])
     );
     loop.start();
     return () => loop.stop();
   }, [x]);
+  const name = sponsor?.name || 'Hobbee.FUN';
+  const message = sponsor?.message || 'Sponsored section';
+  const callToAction = sponsor?.callToAction || 'Visit Hobbee.FUN';
   return (
     <View style={[styles.sponsor, dark ? styles.cardDark : styles.cardLight]}>
-      <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]}>🐝 Hobbee.FUN   •   Sponsored section   •   Visit Hobbee.FUN   •   Sponsor can be changed from hidden admin later   •</Animated.Text>
+      <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]}>🐝 {name}   •   {message}   •   {callToAction}   •   Sponsor can be changed from Firebase admin later   •</Animated.Text>
     </View>
   );
 }
@@ -250,7 +280,8 @@ function AdBox({ dark, tone = 0 }) {
   const borders = dark ? ['#334155', '#475569', '#14532d'] : ['#cbd5e1', '#fed7aa', '#a5f3fc'];
   return (
     <View style={[styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }]}>
-      <Text style={{ color: dark ? '#94a3b8' : '#475569', fontWeight: '700' }}>Advertisement</Text>
+      <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900' }}>Advertisement</Text>
+      <Text style={{ color: dark ? '#94a3b8' : '#64748b', fontSize: 12, marginTop: 4 }}>Google AdMob native ad placeholder</Text>
     </View>
   );
 }
@@ -578,61 +609,65 @@ function TopPredictors({ dark, fg }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       <Text style={{ color: fg }}>Shows everyone with at least one correct prediction. Emails and private data are hidden.</Text>
-      <AdBox dark={dark} tone={0} />
       {list.map((u, i) => (
-        <View key={u.nick} style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
-          <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
-          <Text style={{ fontSize: 28 }}>{u.photo}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}</Text>
-            <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
+        <React.Fragment key={u.nick}>
+          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+            <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
+            <Text style={{ fontSize: 28 }}>{u.photo}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}</Text>
+              <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
+            </View>
           </View>
-        </View>
+          {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} />}
+        </React.Fragment>
       ))}
     </ScrollView>
   );
 }
 
-function SignInScreen({ dark, onBack, onSave }) {
+function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
   const fg = dark ? '#ffffff' : '#0f172a';
-  const [p, setP] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: 'Auto-detected country only' });
+  const [p, setP] = useState({ email: currentProfile?.email || '', password: '', name: currentProfile?.name || '', nickname: currentProfile?.nickname || '', age: currentProfile?.age || '', sex: currentProfile?.sex || '', location: currentProfile?.country || currentProfile?.location || 'Auto-detected country only' });
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title="Sign in" onBack={onBack} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
-        <Text style={[styles.big, { color: fg }]}>Sign in options</Text>
-        <ButtonPill label="Continue with Google" onPress={() => Alert.alert('Phase 2B', 'Google sign-in will connect with backend authentication.')} color="#ffffff" />
-        <ButtonPill label="Continue with social media" onPress={() => Alert.alert('Phase 2B', 'Social login will connect with backend authentication.')} color="#38bdf8" />
-        <Text style={[styles.sectionTitle, { color: fg, marginTop: 18 }]}>Username / Password</Text>
+        <Text style={[styles.big, { color: fg }]}>Firebase account</Text>
+        <Text style={{ color: fg, marginBottom: 12 }}>Email/password is connected to Firebase. Google and social sign-in will be added after this backend stage is stable.</Text>
+        <Text style={[styles.sectionTitle, { color: fg, marginTop: 10 }]}>Email / Password</Text>
         {['email', 'password', 'name', 'nickname', 'age', 'sex'].map((key) => (
-          <TextInput key={key} placeholder={key} placeholderTextColor="#94a3b8" secureTextEntry={key === 'password'} value={p[key] || ''} onChangeText={(v) => setP({ ...p, [key]: v })} style={[styles.input, dark ? styles.inputDark : styles.inputLight]} />
+          <TextInput key={key} placeholder={key} placeholderTextColor="#94a3b8" secureTextEntry={key === 'password'} value={p[key] || ''} onChangeText={(v) => setP({ ...p, [key]: v })} style={[styles.input, dark ? styles.inputDark : styles.inputLight]} autoCapitalize={key === 'email' ? 'none' : 'sentences'} />
         ))}
         <ButtonPill label="Detect my country" onPress={() => setP({ ...p, location: 'United States' })} color={COLORS.amber} />
-        <Text style={{ color: fg, marginTop: 8 }}>Country shown: {p.location}</Text>
-        <ButtonPill label="Save and return to menu" onPress={() => onSave(p)} color={COLORS.green} />
+        <Text style={{ color: fg, marginTop: 8 }}>Country shown publicly: {p.location}</Text>
+        <ButtonPill label="Create new Firebase account" onPress={() => onEmailAuth(p, 'signup')} color={COLORS.green} />
+        <ButtonPill label="Sign in with Firebase" onPress={() => onEmailAuth(p, 'signin')} color={COLORS.blue} />
+        <ButtonPill label="Save profile locally only" onPress={() => onSave(p)} color="#64748b" />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose }) {
+function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose, firebaseUser, onEmailAuth, onSignOut }) {
   const [signingIn, setSigningIn] = useState(false);
   if (signingIn) {
-    return <SignInScreen dark={dark} onBack={() => setSigningIn(false)} onSave={(p) => { saveProfile(p); setSigningIn(false); }} />;
+    return <SignInScreen dark={dark} currentProfile={profile} onEmailAuth={async (p, mode) => { await onEmailAuth(p, mode); setSigningIn(false); }} onBack={() => setSigningIn(false)} onSave={(p) => { saveProfile(p); setSigningIn(false); }} />;
   }
-  const signedIn = !!profile.email;
+  const signedIn = !!firebaseUser || !!profile.email;
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title="Menu" onBack={onClose} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
-        {!signedIn ? <ButtonPill label="Sign in" onPress={() => setSigningIn(true)} color={COLORS.green} /> : <ButtonPill label="Sign out" onPress={() => saveProfile({})} color="#64748b" />}
+        {!signedIn ? <ButtonPill label="Sign in" onPress={() => setSigningIn(true)} color={COLORS.green} /> : <ButtonPill label="Sign out" onPress={onSignOut} color="#64748b" />}
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.big, { color: fg }]}>Account</Text>
           <Text style={{ color: fg }}>Name: {profile.name || 'Not signed in'}</Text>
           <Text style={{ color: fg }}>Nickname: {profile.nickname || 'Not set'}</Text>
           <Text style={{ color: fg }}>Age: {profile.age || 'Not set'}</Text>
           <Text style={{ color: fg }}>Sex: {profile.sex || 'Not set'}</Text>
-          <Text style={{ color: fg }}>Country: {profile.location || 'Not detected'}</Text>
+          <Text style={{ color: fg }}>Country: {profile.country || profile.location || 'Not detected'}</Text>
+          <Text style={{ color: fg }}>Firebase: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
         </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Privacy Policy</Text>
@@ -645,7 +680,7 @@ function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose }) {
         {admin && (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
             <Text style={[styles.sectionTitle, { color: fg }]}>Hidden Admin</Text>
-            <Text style={{ color: fg }}>Visible only for Daniel Pirooz admin login in this prototype. Real version should use backend role security.</Text>
+            <Text style={{ color: fg }}>Visible only when Firestore users/{uid}.isAdmin is true. Your admin access is now backend-controlled.</Text>
             <Text style={{ color: fg }}>Sponsor Manager: Hobbee.FUN banner fields placeholder.</Text>
             <Text style={{ color: fg }}>Match Manager: manual live score updates placeholder.</Text>
           </View>
@@ -665,8 +700,10 @@ export default function App() {
   const [predictions, setPredictions] = useState({});
   const [bestPlayers, setBestPlayers] = useState({});
   const [champion, setChampion] = useState(null);
-  const [profile, setProfile] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '' });
+  const [profile, setProfile] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '' });
   const [admin, setAdmin] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [sponsor, setSponsor] = useState(null);
   const fg = dark ? '#ffffff' : '#0f172a';
   const bg = dark ? COLORS.darkBg : COLORS.lightBg;
 
@@ -682,10 +719,41 @@ export default function App() {
       if (pr) {
         const parsed = JSON.parse(pr);
         setProfile(parsed);
-        setAdmin(parsed.email === 'danny@virtualbeehiveinc.com' && parsed.password === 'YaPe1200@');
+        setAdmin(parsed.isAdmin === true);
       }
     }
     load();
+  }, []);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      if (!user) return;
+      try {
+        const data = await readDoc('users', user.uid);
+        if (data) {
+          const merged = { ...data, email: user.email || data.email || '' };
+          setProfile(merged);
+          setAdmin(data.isAdmin === true);
+          await AsyncStorage.setItem('profile', JSON.stringify(merged));
+        }
+      } catch (e) {
+        console.log('Auth profile load failed', e?.message || e);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    async function loadSponsor() {
+      try {
+        const active = await readDoc('sponsors', 'active');
+        if (active) setSponsor(active);
+      } catch (e) {
+        console.log('Sponsor load failed', e?.message || e);
+      }
+    }
+    loadSponsor();
   }, []);
 
   useEffect(() => {
@@ -700,17 +768,34 @@ export default function App() {
   }, [menu, newsOpen, teamOpen, selected]);
 
   async function savePrediction(id, a, b) {
-    const next = { ...predictions, [String(id)]: { a, b, savedAt: new Date().toISOString() } };
+    const savedAt = new Date().toISOString();
+    const next = { ...predictions, [String(id)]: { a, b, savedAt } };
     setPredictions(next);
     await AsyncStorage.setItem('predictions', JSON.stringify(next));
-    Alert.alert('Prediction saved', `Your prediction ${a} - ${b} was saved on this phone.`);
+    if (firebaseUser) {
+      await writeDoc('predictions', `${id}_${firebaseUser.uid}`, {
+        matchId: String(id),
+        userId: firebaseUser.uid,
+        teamAScore: a,
+        teamBScore: b,
+        updatedAt: serverTimestamp(),
+      });
+      Alert.alert('Prediction saved online', `Your prediction ${a} - ${b} was saved to Firebase.`);
+    } else {
+      Alert.alert('Prediction saved locally', `Your prediction ${a} - ${b} was saved on this phone. Sign in to save online.`);
+    }
   }
 
   async function saveBestPlayer(id, playerName) {
     const next = { ...bestPlayers, [String(id)]: playerName };
     setBestPlayers(next);
     await AsyncStorage.setItem('bestPlayers', JSON.stringify(next));
-    Alert.alert('Best player saved', `${playerName} selected as your best player of the game.`);
+    if (firebaseUser) {
+      await writeDoc('bestPlayerVotes', `${id}_${firebaseUser.uid}`, { matchId: String(id), userId: firebaseUser.uid, playerName, updatedAt: serverTimestamp() });
+      Alert.alert('Best player saved online', `${playerName} selected as your best player of the game.`);
+    } else {
+      Alert.alert('Best player saved locally', `${playerName} selected. Sign in to save online.`);
+    }
   }
 
   async function chooseChampion(team) {
@@ -720,23 +805,89 @@ export default function App() {
     }
     Alert.alert('Confirm champion', `Choose ${team} as your champion? This can be selected only once.`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Confirm', onPress: async () => { setChampion(team); await AsyncStorage.setItem('champion', team); } },
+      { text: 'Confirm', onPress: async () => { setChampion(team); await AsyncStorage.setItem('champion', team); if (firebaseUser) { await writeDoc('championPicks', firebaseUser.uid, { userId: firebaseUser.uid, team, createdAt: serverTimestamp() }, false); } } },
     ]);
   }
 
   async function saveProfile(p) {
-    setProfile(p);
-    const isAdmin = p.email === 'danny@virtualbeehiveinc.com' && p.password === 'YaPe1200@';
-    setAdmin(isAdmin);
-    await AsyncStorage.setItem('profile', JSON.stringify(p));
-    Alert.alert(isAdmin ? 'Admin enabled' : 'Profile saved', isAdmin ? 'Hidden admin tools are now visible in menu.' : 'Your profile was saved locally.');
+    const clean = { ...p, country: p.country || p.location || 'United States' };
+    setProfile(clean);
+    await AsyncStorage.setItem('profile', JSON.stringify(clean));
+    if (firebaseUser) {
+      const profileDoc = {
+        email: firebaseUser.email || clean.email || '',
+        name: clean.name || '',
+        nickname: clean.nickname || '',
+        age: clean.age || '',
+        sex: clean.sex || '',
+        country: clean.country || 'United States',
+        photoUrl: clean.photoUrl || '',
+        updatedAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
+      };
+      await writeDoc('users', firebaseUser.uid, profileDoc);
+      const latest = await readDoc('users', firebaseUser.uid);
+      if (latest?.isAdmin === true) setAdmin(true);
+      Alert.alert('Profile saved online', 'Your profile was saved to Firebase.');
+    } else {
+      Alert.alert('Profile saved locally', 'Sign in to save this profile online.');
+    }
+  }
+
+  async function handleEmailAuth(p, mode) {
+    if (!p.email || !p.password) {
+      Alert.alert('Missing info', 'Please enter email and password.');
+      return;
+    }
+    try {
+      const cred = mode === 'signup'
+        ? await createUserWithEmailAndPassword(auth, p.email.trim(), p.password)
+        : await signInWithEmailAndPassword(auth, p.email.trim(), p.password);
+      const user = cred.user;
+      setFirebaseUser(user);
+      const existing = await readDoc('users', user.uid);
+      if (!existing) {
+        await writeDoc('users', user.uid, {
+          email: user.email,
+          name: p.name || '',
+          nickname: p.nickname || '',
+          age: p.age || '',
+          sex: p.sex || '',
+          country: p.location || 'United States',
+          photoUrl: '',
+          isAdmin: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+        });
+      } else {
+        await writeDoc('users', user.uid, { lastLoginAt: serverTimestamp() });
+      }
+      const latest = await readDoc('users', user.uid);
+      const merged = { ...(latest || {}), email: user.email || p.email };
+      setProfile(merged);
+      setAdmin(latest?.isAdmin === true);
+      await AsyncStorage.setItem('profile', JSON.stringify(merged));
+      Alert.alert(mode === 'signup' ? 'Account created' : 'Signed in', latest?.isAdmin ? 'Admin access enabled.' : 'Firebase account is connected.');
+    } catch (e) {
+      Alert.alert('Firebase sign-in error', e?.message || 'Unable to sign in.');
+    }
+  }
+
+  async function handleSignOut() {
+    try { await signOut(auth); } catch (e) { console.log(e?.message || e); }
+    setFirebaseUser(null);
+    setAdmin(false);
+    setProfile({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '' });
+    await AsyncStorage.removeItem('profile');
+    Alert.alert('Signed out', 'You are now signed out.');
   }
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: bg }] }>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Header dark={dark} fg={fg} setDark={setDark} setMenu={setMenu} />
-      <SponsorBanner dark={dark} />
+      <SponsorBanner dark={dark} sponsor={sponsor} />
       <View style={{ flex: 1 }}>
         {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} />}
         {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} />}
@@ -760,7 +911,7 @@ export default function App() {
         <NewsDetail item={newsOpen} onClose={() => setNewsOpen(null)} dark={dark} />
       </Modal>
       <Modal visible={menu} animationType="slide" onRequestClose={() => setMenu(false)}>
-        <MenuScreen dark={dark} fg={fg} profile={profile} saveProfile={saveProfile} admin={admin} onClose={() => setMenu(false)} />
+        <MenuScreen dark={dark} fg={fg} profile={profile} saveProfile={saveProfile} admin={admin} firebaseUser={firebaseUser} onEmailAuth={handleEmailAuth} onSignOut={handleSignOut} onClose={() => setMenu(false)} />
       </Modal>
     </SafeAreaView>
   );
