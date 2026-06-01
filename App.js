@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -17,7 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const COLORS = {
@@ -237,10 +237,20 @@ function matchStatus(match) {
   const start = new Date(match.dateTime);
   const lock = new Date(start.getTime() + 45 * 60 * 1000);
   const finish = new Date(start.getTime() + 120 * 60 * 1000);
-  if (now < start) return { label: 'Upcoming', color: COLORS.amber, locked: false, left: start - now, prompt: 'Prediction open until kickoff and first half.' };
-  if (now >= start && now < lock) return { label: 'Live 1st Half', color: COLORS.green, locked: false, left: lock - now, prompt: 'Prediction closes at halftime.' };
-  if (now >= lock && now < finish) return { label: 'Locked', color: '#64748b', locked: true, left: 0, prompt: 'Prediction locked after halftime.' };
-  return { label: 'Finished', color: '#94a3b8', locked: true, left: 0, prompt: 'Match finished. Prediction closed.' };
+  const raw = String(match.adminStatus || match.status || '').toLowerCase();
+  if (['final', 'finished', 'fulltime', 'full-time'].includes(raw)) {
+    return { label: 'Final', bucket: 'finished', color: '#94a3b8', locked: true, left: 0, prompt: 'Match finished. Prediction closed.' };
+  }
+  if (['halftime', 'half-time', 'secondhalf', 'second-half', 'locked'].includes(raw)) {
+    return { label: raw.includes('half') ? 'Halftime / Locked' : 'Locked', bucket: 'locked', color: COLORS.amber, locked: true, left: 0, prompt: 'Prediction locked after halftime.' };
+  }
+  if (['live', 'firsthalf', 'first-half'].includes(raw)) {
+    return { label: 'Live 1st Half', bucket: 'live', color: COLORS.green, locked: false, left: Math.max(0, lock - now), prompt: 'Prediction closes at halftime.' };
+  }
+  if (now < start) return { label: 'Upcoming', bucket: 'upcoming', color: COLORS.amber, locked: false, left: start - now, prompt: 'Prediction open until kickoff and first half.' };
+  if (now >= start && now < lock) return { label: 'Live 1st Half', bucket: 'live', color: COLORS.green, locked: false, left: lock - now, prompt: 'Prediction closes at halftime.' };
+  if (now >= lock && now < finish) return { label: 'Locked', bucket: 'locked', color: '#64748b', locked: true, left: 0, prompt: 'Prediction locked after halftime.' };
+  return { label: 'Final', bucket: 'finished', color: '#94a3b8', locked: true, left: 0, prompt: 'Match finished. Prediction closed.' };
 }
 
 function fmtLeft(ms) {
@@ -254,6 +264,102 @@ function fmtLeft(ms) {
 
 function fakeAverage(matchId, side) {
   return Math.round((matchId * side + side * 2) % 5);
+}
+
+
+function applyMatchOverrides(fixtures, overrides = {}) {
+  return fixtures.map((match) => {
+    const override = overrides[String(match.id)] || {};
+    const hasScoreA = override.teamAScore !== undefined || override.scoreA !== undefined;
+    const hasScoreB = override.teamBScore !== undefined || override.scoreB !== undefined;
+    const scoreA = hasScoreA ? Number(override.teamAScore ?? override.scoreA ?? 0) : match.liveScore?.[0] ?? 0;
+    const scoreB = hasScoreB ? Number(override.teamBScore ?? override.scoreB ?? 0) : match.liveScore?.[1] ?? 0;
+    return {
+      ...match,
+      ...override,
+      adminStatus: override.status || override.adminStatus || match.adminStatus || match.status || '',
+      liveScore: [Number.isFinite(scoreA) ? scoreA : 0, Number.isFinite(scoreB) ? scoreB : 0],
+    };
+  });
+}
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function getMatchSmartRank(match) {
+  const st = matchStatus(match);
+  const now = new Date();
+  const start = new Date(match.dateTime);
+  if (st.bucket === 'live') return 0;
+  if (!st.locked && isSameDay(start, now)) return 1;
+  if (st.bucket === 'locked' && isSameDay(start, now)) return 2;
+  if (st.bucket === 'finished') {
+    const ageHours = Math.abs(now - start) / 36e5;
+    return ageHours < 36 ? 3 : 5;
+  }
+  return 4;
+}
+
+function sortMatchesSmartly(matches) {
+  return [...matches].sort((a, b) => {
+    const rankA = getMatchSmartRank(a);
+    const rankB = getMatchSmartRank(b);
+    if (rankA !== rankB) return rankA - rankB;
+    return new Date(a.dateTime) - new Date(b.dateTime);
+  });
+}
+
+function getRelevantMatchId(matches) {
+  const sorted = sortMatchesSmartly(matches);
+  const live = sorted.find((m) => matchStatus(m).bucket === 'live');
+  if (live) return live.id;
+  const today = sorted.find((m) => isSameDay(new Date(m.dateTime), new Date()) && !matchStatus(m).locked);
+  if (today) return today.id;
+  const upcoming = sorted.find((m) => !matchStatus(m).locked);
+  if (upcoming) return upcoming.id;
+  return sorted.find((m) => matchStatus(m).bucket === 'finished')?.id || sorted[0]?.id;
+}
+
+function statusTagText(match) {
+  const st = matchStatus(match);
+  const start = new Date(match.dateTime);
+  if (st.bucket === 'live') return 'Live now';
+  if (st.bucket === 'finished') return 'Finished';
+  if (isSameDay(start, new Date())) return 'Today';
+  return st.label;
+}
+
+function calculatePredictionPoints(match, prediction) {
+  if (!prediction) return { points: 0, label: 'No prediction' };
+  const st = matchStatus(match);
+  if (st.bucket !== 'finished') return { points: 0, label: 'Pending result' };
+  const finalA = Number(match.liveScore?.[0] ?? 0);
+  const finalB = Number(match.liveScore?.[1] ?? 0);
+  const predA = Number(prediction.a ?? prediction.teamAScore ?? 0);
+  const predB = Number(prediction.b ?? prediction.teamBScore ?? 0);
+  if (predA === finalA && predB === finalB) return { points: 50, label: 'Exact score' };
+  const predOutcome = predA === predB ? 'draw' : predA > predB ? 'A' : 'B';
+  const finalOutcome = finalA === finalB ? 'draw' : finalA > finalB ? 'A' : 'B';
+  if (predOutcome === finalOutcome && finalOutcome === 'draw') return { points: 15, label: 'Correct draw' };
+  if (predOutcome === finalOutcome) return { points: 10, label: 'Correct winner' };
+  return { points: 0, label: 'Missed result' };
+}
+
+function calculateLocalScore(matches, predictions) {
+  return matches.reduce((acc, match) => {
+    const result = calculatePredictionPoints(match, predictions[String(match.id)]);
+    acc.points += result.points;
+    if (result.points > 0) acc.correct += 1;
+    if (result.points === 50) acc.exact += 1;
+    return acc;
+  }, { points: 0, correct: 0, exact: 0 });
+}
+
+function predictionAverageText(match, predictions) {
+  const pred = predictions[String(match.id)];
+  if (!pred) return { line: `${match.teamA} — ${match.teamB}`, note: 'Global Firebase average will appear as more users save predictions online.' };
+  return { line: `${match.teamA} ${pred.a} - ${pred.b} ${match.teamB}`, note: 'Showing your saved prediction until global Firebase averages are aggregated.' };
 }
 
 function ButtonPill({ label, onPress, disabled, color }) {
@@ -340,27 +446,65 @@ function Header({ dark, fg, setDark, setMenu }) {
   );
 }
 
-function Matches({ dark, fg, predictions, setSelected, adSettings }) {
+function Matches({ dark, fg, predictions, setSelected, adSettings, matchOverrides }) {
+  const scrollRef = useRef(null);
+  const [filter, setFilter] = useState('smart');
+  const effectiveMatches = useMemo(() => applyMatchOverrides(FIXTURES, matchOverrides), [matchOverrides]);
+  const relevantId = useMemo(() => getRelevantMatchId(effectiveMatches), [effectiveMatches]);
+  const shownMatches = useMemo(() => {
+    const smart = sortMatchesSmartly(effectiveMatches);
+    if (filter === 'live') return smart.filter((m) => matchStatus(m).bucket === 'live');
+    if (filter === 'today') return smart.filter((m) => isSameDay(new Date(m.dateTime), new Date()));
+    if (filter === 'upcoming') return smart.filter((m) => !matchStatus(m).locked);
+    if (filter === 'finished') return smart.filter((m) => matchStatus(m).bucket === 'finished');
+    if (filter === 'all') return effectiveMatches;
+    return smart;
+  }, [effectiveMatches, filter]);
+
+  useEffect(() => {
+    const index = shownMatches.findIndex((m) => m.id === relevantId);
+    if (index > 0 && filter === 'smart') {
+      const timer = setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, index * 150 - 20), animated: true }), 450);
+      return () => clearTimeout(timer);
+    }
+  }, [shownMatches, relevantId, filter]);
+
   return (
-    <ScrollView style={{ padding: 12 }}>
+    <ScrollView ref={scrollRef} style={{ padding: 12 }} contentContainerStyle={{ paddingBottom: 30 }}>
       <Text style={[styles.big, { color: fg }]}>Matches</Text>
-      <Text style={{ color: fg, marginBottom: 8 }}>All 104 tournament matches are listed. Tap any match to predict before halftime.</Text>
+      <Text style={{ color: fg, marginBottom: 8 }}>Smart match list moves with the tournament date. Live, today, and recent results appear first, but you can still scroll all 104 matches.</Text>
+      <View style={styles.filterRow}>
+        {[['smart', 'Smart'], ['live', 'Live'], ['today', 'Today'], ['upcoming', 'Upcoming'], ['finished', 'Finished'], ['all', 'All']].map(([key, label]) => (
+          <TouchableOpacity key={key} onPress={() => setFilter(key)} style={[styles.filterChip, filter === key && { backgroundColor: COLORS.amber, borderColor: COLORS.amber }] }>
+            <Text style={{ color: filter === key ? '#000' : fg, fontWeight: '900' }}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <AdBox dark={dark} tone={0} placement="matches" adSettings={adSettings} />
-      {FIXTURES.map((match, index) => {
+      {shownMatches.length === 0 ? (
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
+          <Text style={{ color: fg, fontWeight: '900' }}>No matches in this filter.</Text>
+        </View>
+      ) : null}
+      {shownMatches.map((match, index) => {
         const st = matchStatus(match);
-        const key = String(match.id);
-        const pred = predictions[key];
+        const pred = predictions[String(match.id)];
+        const scoreInfo = calculatePredictionPoints(match, pred);
+        const isRelevant = match.id === relevantId;
+        const isFinished = st.bucket === 'finished';
         return (
           <View key={match.id}>
-            <TouchableOpacity onPress={() => setSelected(match)} style={[styles.matchCard, dark ? styles.cardDark : styles.cardLight]}>
+            <TouchableOpacity onPress={() => setSelected(match)} style={[styles.matchCard, dark ? styles.cardDark : styles.cardLight, isRelevant && { borderColor: COLORS.green, borderWidth: 2 }, isFinished && { opacity: 0.62 }] }>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
-                <Text style={{ color: st.color, fontWeight: '900' }}>#{match.matchNo} {st.label}</Text>
+                <Text style={{ color: st.color, fontWeight: '900' }}>#{match.matchNo} {statusTagText(match)}</Text>
                 <Text style={{ color: fg }}>{fmtDate(match.dateTime)}</Text>
               </View>
               <Text style={[styles.matchTeams, { color: fg }]}>{FLAGS[match.teamA] || '🏳️'} {match.teamA}  vs  {FLAGS[match.teamB] || '🏳️'} {match.teamB}</Text>
               <Text style={{ color: fg }}>{match.stage} {match.group ? `• Group ${match.group}` : ''}</Text>
               <Text style={{ color: fg }}>{match.stadium} • {match.city}</Text>
-              {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
+              {st.locked ? <Text style={{ color: st.color, fontWeight: '900' }}>Prediction locked</Text> : <Text style={{ color: COLORS.green, fontWeight: '900' }}>Prediction open until halftime</Text>}
+              {isFinished ? <Text style={{ color: fg, fontWeight: '900' }}>Final score: {match.liveScore[0]} - {match.liveScore[1]}</Text> : null}
+              {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b} • {scoreInfo.label}{scoreInfo.points ? ` • ${scoreInfo.points} pts` : ''}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
             </TouchableOpacity>
             {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="matches" adSettings={adSettings} />}
           </View>
@@ -422,8 +566,8 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
-            <Text style={styles.blackScore}>{match.teamA} {fakeAverage(match.id, 1)} - {fakeAverage(match.id, 2)} {match.teamB}</Text>
-            <Text style={styles.blackSmall}>Placeholder until backend global averages are connected.</Text>
+            <Text style={styles.blackScore}>{predictionAverageText(match, predictions).line}</Text>
+            <Text style={styles.blackSmall}>{predictionAverageText(match, predictions).note}</Text>
           </View>
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Live Score</Text>
@@ -633,20 +777,29 @@ function TeamDetail({ team, onClose, dark }) {
   );
 }
 
-function TopPredictors({ dark, fg, adSettings }) {
-  const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
+function TopPredictors({ dark, fg, adSettings, predictions, matchOverrides, profile }) {
+  const effectiveMatches = useMemo(() => applyMatchOverrides(FIXTURES, matchOverrides), [matchOverrides]);
+  const localScore = useMemo(() => calculateLocalScore(effectiveMatches, predictions || {}), [effectiveMatches, predictions]);
+  const hasLocalScore = localScore.points > 0 || Object.keys(predictions || {}).length > 0;
+  const sampleList = Array.from({ length: 40 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: Math.max(0, 120 - i * 2), correct: Math.max(1, 12 - (i % 7)), exact: i % 5, photo: '👤', sample: true }));
+  const localUser = { nick: profile?.nickname || profile?.name || 'You', points: localScore.points, correct: localScore.correct, exact: localScore.exact, photo: '⭐', sample: false };
+  const list = hasLocalScore ? [localUser, ...sampleList].sort((a, b) => b.points - a.points) : sampleList;
   return (
-    <ScrollView style={{ padding: 12 }}>
+    <ScrollView style={{ padding: 12 }} contentContainerStyle={{ paddingBottom: 30 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
-      <Text style={{ color: fg }}>Shows everyone with at least one correct prediction. Emails and private data are hidden.</Text>
+      <Text style={{ color: fg }}>Leaderboard scoring is now calculated from finished match results. Global Firebase leaderboard summaries will replace sample predictor rows as real users accumulate correct results.</Text>
+      <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }] }>
+        <Text style={[styles.sectionTitle, { color: fg }]}>Scoring rules</Text>
+        <Text style={{ color: fg }}>Exact score: 50 pts • Correct draw: 15 pts • Correct winner: 10 pts</Text>
+      </View>
       {list.map((u, i) => (
-        <React.Fragment key={u.nick}>
-          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+        <React.Fragment key={`${u.nick}-${i}`}>
+          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }, !u.sample && { borderColor: COLORS.green, borderWidth: 2 }] }>
             <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
             <Text style={{ fontSize: 28 }}>{u.photo}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}</Text>
-              <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
+              <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}{u.sample ? '' : ' • Your score'}</Text>
+              <Text style={{ color: fg }}>{u.correct} correct • {u.exact || 0} exact • {u.points} pts</Text>
             </View>
           </View>
           {(i + 1) % 3 === 0 && i !== list.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
@@ -915,6 +1068,7 @@ export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [sponsor, setSponsor] = useState(null);
   const [adSettings, setAdSettings] = useState(DEFAULT_AD_SETTINGS);
+  const [matchOverrides, setMatchOverrides] = useState({});
   const fg = dark ? '#ffffff' : '#0f172a';
   const bg = dark ? COLORS.darkBg : COLORS.lightBg;
 
@@ -977,6 +1131,21 @@ export default function App() {
       }
     }
     loadAdSettings();
+  }, []);
+
+
+  useEffect(() => {
+    async function loadMatchOverrides() {
+      try {
+        const snap = await getDocs(collection(db, 'matches'));
+        const next = {};
+        snap.forEach((item) => { next[String(item.id)] = item.data(); });
+        setMatchOverrides(next);
+      } catch (e) {
+        console.log('Match override load failed', e?.message || e);
+      }
+    }
+    loadMatchOverrides();
   }, []);
 
   useEffect(() => {
@@ -1140,10 +1309,10 @@ export default function App() {
       <Header dark={dark} fg={fg} setDark={setDark} setMenu={setMenu} />
       <SponsorBanner dark={dark} sponsor={sponsor} />
       <View style={{ flex: 1 }}>
-        {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} adSettings={adSettings} />}
+        {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} adSettings={adSettings} matchOverrides={matchOverrides} />}
         {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} adSettings={adSettings} />}
         {tab === 'news' && <News dark={dark} fg={fg} setNewsOpen={setNewsOpen} adSettings={adSettings} />}
-        {tab === 'top' && <TopPredictors dark={dark} fg={fg} adSettings={adSettings} />}
+        {tab === 'top' && <TopPredictors dark={dark} fg={fg} adSettings={adSettings} predictions={predictions} matchOverrides={matchOverrides} profile={profile} />}
       </View>
       <View style={[styles.nav, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#ffffff' }] }>
         {[['matches', 'Matches'], ['groups', 'Groups'], ['news', 'News'], ['top', 'Top']].map(([key, label]) => (
@@ -1219,6 +1388,8 @@ const styles = StyleSheet.create({
   big: { fontSize: 22, fontWeight: '900', marginBottom: 8 },
   nav: { flexDirection: 'row', gap: 4, padding: 8, borderTopWidth: 1, borderTopColor: '#1e293b' },
   navBtn: { flex: 1, alignItems: 'center', padding: 10, borderRadius: 14 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#334155' },
   card: { borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1 },
   matchCard: { borderRadius: 18, padding: 14, marginBottom: 10, borderWidth: 1 },
   cardDark: { backgroundColor: COLORS.darkCard, borderColor: COLORS.slate },
