@@ -7,6 +7,7 @@ import {
   Modal,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -73,6 +74,43 @@ function safeJsonParse(value, fallback = null) {
 function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
   if (settings?.useTestAds) return TestIds.BANNER;
   return ADMOB_AD_UNITS[placement] || ADMOB_AD_UNITS.matches;
+}
+
+
+const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
+const APP_SHARE_URL = 'https://hobbee.fun';
+
+async function shareAppMessage(message, title = APP_SHARE_NAME) {
+  try {
+    await Share.share({ title, message });
+  } catch (e) {
+    Alert.alert('Share unavailable', e?.message || 'Unable to open sharing options right now.');
+  }
+}
+
+function displayNick(profile = {}) {
+  return profile?.nickname || profile?.name || 'A WorldCup fan';
+}
+
+function matchShareMessage(match, scoreA, scoreB, profile = {}) {
+  return `${displayNick(profile)} predicted ${match.teamA} ${scoreA} - ${scoreB} ${match.teamB} in ${APP_SHARE_NAME}.
+
+Make your WorldCup 2026 predictions too.
+${APP_SHARE_URL}`;
+}
+
+function championShareMessage(team, profile = {}) {
+  return `${displayNick(profile)} picked ${team} as the WorldCup 2026 champion in ${APP_SHARE_NAME}.
+
+Who is your champion pick?
+${APP_SHARE_URL}`;
+}
+
+function leaderboardShareMessage(profile = {}) {
+  return `${displayNick(profile)} is competing on the Top Predictors leaderboard in ${APP_SHARE_NAME}.
+
+Join the prediction challenge.
+${APP_SHARE_URL}`;
 }
 
 const firebaseConfig = {
@@ -440,7 +478,7 @@ function StadiumCard({ match, dark, fg }) {
   );
 }
 
-function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, saveBestPlayer, adSettings }) {
+function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, saveBestPlayer, adSettings, profile }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   const [tab, setTab] = useState('summary');
   const saved = predictions[String(match.id)] || { a: 0, b: 0 };
@@ -463,6 +501,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <ScoreStepper label={match.teamB} value={b} setValue={setB} disabled={status.locked} />
           </View>
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
+          <ButtonPill label="Share this prediction" onPress={() => shareAppMessage(matchShareMessage(match, a, b, profile), 'Share prediction')} color={COLORS.blue} />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
             <Text style={styles.blackScore}>{match.teamA} {fakeAverage(match.id, 1)} - {fakeAverage(match.id, 2)} {match.teamB}</Text>
@@ -665,7 +704,7 @@ function GroupTableCard({ group, teams, fg, dark, champion, chooseChampion, setT
   );
 }
 
-function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings }) {
+function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings, profile }) {
   const groupEntries = Object.entries(GROUPS);
   return (
     <ScrollView style={{ padding: 12 }}>
@@ -673,6 +712,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings })
         <Text style={[styles.big, { color: fg }]}>Pick Your Champion</Text>
         <Text style={{ color: fg }}>Choose once. After confirmation, it is locked.</Text>
         <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>{champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}</Text>
+        {champion ? <ButtonPill label="Share champion pick" onPress={() => shareAppMessage(championShareMessage(champion, profile), 'Share champion pick')} color={COLORS.blue} /> : null}
       </View>
 
       <Text style={[styles.sectionTitle, { color: fg }]}>Groups</Text>
@@ -725,6 +765,7 @@ function NewsDetail({ item, onClose, dark }) {
         <Text style={[styles.big, { color: fg }]}>{item.title}</Text>
         <Text style={{ color: COLORS.amber, fontWeight: '900' }}>Source: {item.source} • {item.date}</Text>
         <Text style={{ color: fg, fontSize: 16, marginTop: 16, lineHeight: 24 }}>{item.body}</Text>
+        <ButtonPill label="Share app with this news" onPress={() => shareAppMessage(`${item.title}\n\nFollow WorldCup 2026 predictions in ${APP_SHARE_NAME}.\n${APP_SHARE_URL}`, 'Share news')} color={COLORS.blue} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -767,7 +808,7 @@ function TeamDetail({ team, onClose, dark }) {
   );
 }
 
-function TopPredictors({ dark, fg, adSettings }) {
+function TopPredictors({ dark, fg, adSettings, profile }) {
   const [visibleCount, setVisibleCount] = useState(COST_CONTROL.leaderboardPageSize);
   const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: '👤' }));
   const visibleList = list.slice(0, visibleCount);
@@ -775,6 +816,7 @@ function TopPredictors({ dark, fg, adSettings }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       <Text style={{ color: fg }}>Cost-controlled leaderboard view. The app loads a limited page first, then users can load more.</Text>
+      <ButtonPill label="Share leaderboard challenge" onPress={() => shareAppMessage(leaderboardShareMessage(profile), 'Share leaderboard')} color={COLORS.blue} />
       {visibleList.map((u, i) => (
         <React.Fragment key={u.nick}>
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}> 
@@ -1440,9 +1482,9 @@ export default function App() {
       <SponsorBanner dark={dark} sponsor={sponsor} />
       <View style={{ flex: 1 }}>
         {tab === 'matches' && <Matches dark={dark} fg={fg} predictions={predictions} setSelected={setSelected} adSettings={adSettings} />}
-        {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} adSettings={adSettings} />}
+        {tab === 'groups' && <Groups dark={dark} fg={fg} champion={champion} chooseChampion={chooseChampion} setTeamOpen={setTeamOpen} adSettings={adSettings} profile={profile} />}
         {tab === 'news' && <News dark={dark} fg={fg} setNewsOpen={setNewsOpen} adSettings={adSettings} />}
-        {tab === 'top' && <TopPredictors dark={dark} fg={fg} adSettings={adSettings} />}
+        {tab === 'top' && <TopPredictors dark={dark} fg={fg} adSettings={adSettings} profile={profile} />}
       </View>
       <View style={[styles.nav, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#ffffff' }] }>
         {[['matches', 'Matches'], ['groups', 'Groups'], ['news', 'News'], ['top', 'Top']].map(([key, label]) => (
@@ -1452,7 +1494,7 @@ export default function App() {
         ))}
       </View>
       <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
-        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} bestPlayers={bestPlayers} saveBestPlayer={saveBestPlayer} adSettings={adSettings} />
+        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} bestPlayers={bestPlayers} saveBestPlayer={saveBestPlayer} adSettings={adSettings} profile={profile} />
       </Modal>
       <Modal visible={!!teamOpen} animationType="slide" onRequestClose={() => setTeamOpen(null)}>
         <TeamDetail team={teamOpen} onClose={() => setTeamOpen(null)} dark={dark} />
