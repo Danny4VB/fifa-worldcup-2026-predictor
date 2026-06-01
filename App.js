@@ -34,13 +34,13 @@ const COLORS = {
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCTAXgkM7zUdB3jajE3SRfcdvML0kgW5_w",
-  authDomain: "fifa-worldcup-2026-predictor.firebaseapp.com",
-  projectId: "fifa-worldcup-2026-predictor",
-  storageBucket: "fifa-worldcup-2026-predictor.firebasestorage.app",
-  messagingSenderId: "560795586407",
-  appId: "1:560795586407:web:f9cacd1bcb66b2c8c9a9c2",
-  measurementId: "G-ZEFX4R6LTZ"
+  apiKey: 'AIzaSyCTAXgkM7zUdB3jajE3SRfcdvML0kgW5_w',
+  authDomain: 'fifa-worldcup-2026-predictor.firebaseapp.com',
+  projectId: 'fifa-worldcup-2026-predictor',
+  storageBucket: 'fifa-worldcup-2026-predictor.firebasestorage.app',
+  messagingSenderId: '560795586407',
+  appId: '1:560795586407:web:f9cacd1bcb66b2c8c9a9c2',
+  measurementId: 'G-ZEFX4R6LTZ',
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -652,7 +652,21 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
 function MenuScreen({ dark, fg, profile, saveProfile, admin, onClose, firebaseUser, onEmailAuth, onSignOut }) {
   const [signingIn, setSigningIn] = useState(false);
   if (signingIn) {
-    return <SignInScreen dark={dark} currentProfile={profile} onEmailAuth={async (p, mode) => { await onEmailAuth(p, mode); setSigningIn(false); }} onBack={() => setSigningIn(false)} onSave={(p) => { saveProfile(p); setSigningIn(false); }} />;
+    return (
+      <SignInScreen
+        dark={dark}
+        currentProfile={profile}
+        onEmailAuth={async (p, mode) => {
+          const ok = await onEmailAuth(p, mode);
+          if (ok) setSigningIn(false);
+        }}
+        onBack={() => setSigningIn(false)}
+        onSave={async (p) => {
+          await saveProfile(p);
+          setSigningIn(false);
+        }}
+      />
+    );
   }
   const signedIn = !!firebaseUser || !!profile.email;
   return (
@@ -837,40 +851,66 @@ export default function App() {
   async function handleEmailAuth(p, mode) {
     if (!p.email || !p.password) {
       Alert.alert('Missing info', 'Please enter email and password.');
-      return;
+      return false;
     }
+
+    const cleanEmail = String(p.email).trim().toLowerCase();
+
     try {
       const cred = mode === 'signup'
-        ? await createUserWithEmailAndPassword(auth, p.email.trim(), p.password)
-        : await signInWithEmailAndPassword(auth, p.email.trim(), p.password);
+        ? await createUserWithEmailAndPassword(auth, cleanEmail, p.password)
+        : await signInWithEmailAndPassword(auth, cleanEmail, p.password);
+
       const user = cred.user;
       setFirebaseUser(user);
-      const existing = await readDoc('users', user.uid);
-      if (!existing) {
-        await writeDoc('users', user.uid, {
-          email: user.email,
-          name: p.name || '',
-          nickname: p.nickname || '',
-          age: p.age || '',
-          sex: p.sex || '',
-          country: p.location || 'United States',
-          photoUrl: '',
-          isAdmin: false,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          lastLoginAt: serverTimestamp(),
-        });
-      } else {
-        await writeDoc('users', user.uid, { lastLoginAt: serverTimestamp() });
+
+      let latest = null;
+      try {
+        const existing = await readDoc('users', user.uid);
+        if (!existing) {
+          await writeDoc('users', user.uid, {
+            email: user.email || cleanEmail,
+            name: p.name || '',
+            nickname: p.nickname || '',
+            age: p.age || '',
+            sex: p.sex || '',
+            country: p.location || 'United States',
+            photoUrl: '',
+            isAdmin: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+          });
+        } else {
+          await writeDoc('users', user.uid, { lastLoginAt: serverTimestamp() });
+        }
+        latest = await readDoc('users', user.uid);
+      } catch (profileError) {
+        console.log('Firebase profile/admin check failed', profileError?.message || profileError);
+        latest = { email: user.email || cleanEmail, name: p.name || '', nickname: p.nickname || '', country: p.location || 'United States', isAdmin: false };
       }
-      const latest = await readDoc('users', user.uid);
-      const merged = { ...(latest || {}), email: user.email || p.email };
+
+      const merged = {
+        ...(latest || {}),
+        email: user.email || cleanEmail,
+        name: latest?.name || p.name || '',
+        nickname: latest?.nickname || p.nickname || '',
+        country: latest?.country || p.location || 'United States',
+      };
+
       setProfile(merged);
-      setAdmin(latest?.isAdmin === true);
+      setAdmin(merged?.isAdmin === true);
       await AsyncStorage.setItem('profile', JSON.stringify(merged));
-      Alert.alert(mode === 'signup' ? 'Account created' : 'Signed in', latest?.isAdmin ? 'Admin access enabled.' : 'Firebase account is connected.');
+
+      Alert.alert(
+        mode === 'signup' ? 'Account created' : 'Signed in',
+        merged?.isAdmin ? 'Admin access enabled.' : 'Firebase account is connected.'
+      );
+      return true;
     } catch (e) {
+      console.log('Firebase sign-in error', e?.code, e?.message || e);
       Alert.alert('Firebase sign-in error', e?.message || 'Unable to sign in.');
+      return false;
     }
   }
 
