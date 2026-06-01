@@ -686,7 +686,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
         {admin ? (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>Hidden Admin</Text>
-            <Text style={{ color: fg }}>Visible only when Firestore users/{{uid}}.isAdmin is true. Your admin access is backend-controlled.</Text>
+            <Text style={{ color: fg }}>Visible only when your Firestore user document has isAdmin set to true. Your admin access is backend-controlled.</Text>
             <Text style={{ color: fg }}>Sponsor Manager: Hobbee.FUN banner fields placeholder.</Text>
             <Text style={{ color: fg }}>Match Manager: manual live score updates placeholder.</Text>
           </View>
