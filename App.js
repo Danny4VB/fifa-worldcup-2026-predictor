@@ -20,6 +20,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import * as Clipboard from 'expo-clipboard';
 
 const COLORS = {
   darkBg: '#070b12',
@@ -79,6 +80,15 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
 
 const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
 const APP_SHARE_URL = 'https://hobbee.fun';
+const APP_BRAND_LINE = 'By Virtual Beehive Inc., creators of Hobbee.FUN — the only hobby-specific social media platform.';
+const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN';
+
+function brandedShareFooter() {
+  return `${APP_SHARE_NAME}
+${APP_BRAND_LINE}
+${APP_SHARE_URL}
+${APP_SHARE_HASHTAGS}`;
+}
 
 async function shareAppMessage(message, title = APP_SHARE_NAME) {
   try {
@@ -88,29 +98,58 @@ async function shareAppMessage(message, title = APP_SHARE_NAME) {
   }
 }
 
+async function copyShareMessage(message) {
+  try {
+    await Clipboard.setStringAsync(message);
+    Alert.alert('Copied', 'Share message copied. You can paste it into any social app.');
+  } catch (e) {
+    Alert.alert('Copy unavailable', e?.message || 'Unable to copy this message right now.');
+  }
+}
+
 function displayNick(profile = {}) {
   return profile?.nickname || profile?.name || 'A WorldCup fan';
 }
 
 function matchShareMessage(match, scoreA, scoreB, profile = {}) {
-  return `${displayNick(profile)} predicted ${match.teamA} ${scoreA} - ${scoreB} ${match.teamB} in ${APP_SHARE_NAME}.
+  return `${displayNick(profile)} predicted:
+${FLAGS[match.teamA] || ''} ${match.teamA} ${scoreA} - ${scoreB} ${match.teamB} ${FLAGS[match.teamB] || ''}
 
-Make your WorldCup 2026 predictions too.
-${APP_SHARE_URL}`;
+Make your own WorldCup 2026 prediction and compete on the leaderboard.
+
+${brandedShareFooter()}`;
 }
 
 function championShareMessage(team, profile = {}) {
-  return `${displayNick(profile)} picked ${team} as the WorldCup 2026 champion in ${APP_SHARE_NAME}.
+  return `${displayNick(profile)} picked ${FLAGS[team] || ''} ${team} as the WorldCup 2026 champion in ${APP_SHARE_NAME}.
 
 Who is your champion pick?
-${APP_SHARE_URL}`;
+
+${brandedShareFooter()}`;
 }
 
 function leaderboardShareMessage(profile = {}) {
   return `${displayNick(profile)} is competing on the Top Predictors leaderboard in ${APP_SHARE_NAME}.
 
-Join the prediction challenge.
-${APP_SHARE_URL}`;
+Join the WorldCup 2026 prediction challenge.
+
+${brandedShareFooter()}`;
+}
+
+function newsShareMessage(item) {
+  return `${item.title}
+
+Follow WorldCup 2026 predictions, matches, groups, news, and leaderboard competition in ${APP_SHARE_NAME}.
+
+${brandedShareFooter()}`;
+}
+
+function appInviteShareMessage(profile = {}) {
+  return `${displayNick(profile)} invited you to join ${APP_SHARE_NAME}.
+
+Predict WorldCup 2026 matches, choose your champion, follow groups, and compete on the leaderboard.
+
+${brandedShareFooter()}`;
 }
 
 const firebaseConfig = {
@@ -345,6 +384,15 @@ function ButtonPill({ label, onPress, disabled, color }) {
   );
 }
 
+function ShareCopyRow({ message, shareLabel = 'Share', copyLabel = 'Copy text', title = APP_SHARE_NAME }) {
+  return (
+    <View style={styles.shareRow}>
+      <ButtonPill label={shareLabel} onPress={() => shareAppMessage(message, title)} color={COLORS.blue} />
+      <ButtonPill label={copyLabel} onPress={() => copyShareMessage(message)} color={COLORS.slate} />
+    </View>
+  );
+}
+
 function BackHeader({ title, onBack, dark }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   return (
@@ -486,6 +534,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
   const [b, setB] = useState(saved.b);
   const selectedBest = bestPlayers[String(match.id)];
   const status = matchStatus(match);
+  const shareMessage = matchShareMessage(match, a, b, profile);
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title={`${match.teamA} vs ${match.teamB}`} onBack={onClose} dark={dark} />
@@ -501,7 +550,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <ScoreStepper label={match.teamB} value={b} setValue={setB} disabled={status.locked} />
           </View>
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
-          <ButtonPill label="Share this prediction" onPress={() => shareAppMessage(matchShareMessage(match, a, b, profile), 'Share prediction')} color={COLORS.blue} />
+          <ShareCopyRow message={shareMessage} shareLabel="Share this prediction" copyLabel="Copy prediction text" title="Share prediction" />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
             <Text style={styles.blackScore}>{match.teamA} {fakeAverage(match.id, 1)} - {fakeAverage(match.id, 2)} {match.teamB}</Text>
@@ -712,7 +761,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings, p
         <Text style={[styles.big, { color: fg }]}>Pick Your Champion</Text>
         <Text style={{ color: fg }}>Choose once. After confirmation, it is locked.</Text>
         <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>{champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}</Text>
-        {champion ? <ButtonPill label="Share champion pick" onPress={() => shareAppMessage(championShareMessage(champion, profile), 'Share champion pick')} color={COLORS.blue} /> : null}
+        {champion ? <ShareCopyRow message={championShareMessage(champion, profile)} shareLabel="Share champion pick" copyLabel="Copy champion text" title="Share champion pick" /> : null}
       </View>
 
       <Text style={[styles.sectionTitle, { color: fg }]}>Groups</Text>
@@ -765,7 +814,7 @@ function NewsDetail({ item, onClose, dark }) {
         <Text style={[styles.big, { color: fg }]}>{item.title}</Text>
         <Text style={{ color: COLORS.amber, fontWeight: '900' }}>Source: {item.source} • {item.date}</Text>
         <Text style={{ color: fg, fontSize: 16, marginTop: 16, lineHeight: 24 }}>{item.body}</Text>
-        <ButtonPill label="Share app with this news" onPress={() => shareAppMessage(`${item.title}\n\nFollow WorldCup 2026 predictions in ${APP_SHARE_NAME}.\n${APP_SHARE_URL}`, 'Share news')} color={COLORS.blue} />
+        <ShareCopyRow message={newsShareMessage(item)} shareLabel="Share app with this news" copyLabel="Copy news text" title="Share news" />
       </ScrollView>
     </SafeAreaView>
   );
@@ -816,7 +865,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       <Text style={{ color: fg }}>Cost-controlled leaderboard view. The app loads a limited page first, then users can load more.</Text>
-      <ButtonPill label="Share leaderboard challenge" onPress={() => shareAppMessage(leaderboardShareMessage(profile), 'Share leaderboard')} color={COLORS.blue} />
+      <ShareCopyRow message={leaderboardShareMessage(profile)} shareLabel="Share leaderboard challenge" copyLabel="Copy challenge text" title="Share leaderboard" />
       {visibleList.map((u, i) => (
         <React.Fragment key={u.nick}>
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}> 
@@ -1218,6 +1267,11 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
         </View>
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
+          <Text style={{ color: fg }}>Share FIFA WorldCup 2026 Predictor with your social networks, or copy the message and paste it anywhere.</Text>
+          <ShareCopyRow message={appInviteShareMessage(profile)} shareLabel="Share app invite" copyLabel="Copy invite text" title="Invite friends" />
+        </View>
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Privacy Policy</Text>
           <Text style={{ color: fg }}>We do not sell user data. Leaderboard shows nickname and profile image only when a user has correct predictions.</Text>
@@ -1571,6 +1625,7 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: COLORS.amber, padding: 10, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 8, flex: 1 },
   btnText: { fontWeight: '900', color: '#000000', textAlign: 'center' },
   disabled: { opacity: 0.45 },
+  shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
   sponsor: { height: 42, justifyContent: 'center', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
   sponsorText: { fontWeight: '900', fontSize: 15, color: COLORS.amber, width: 900 },
   adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10, overflow: 'hidden' },

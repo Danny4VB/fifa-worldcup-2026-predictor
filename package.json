@@ -20,7 +20,8 @@
     "react-native-screens": "latest",
     "@react-native-async-storage/async-storage": "latest",
     "firebase": "latest",
-    "react-native-google-mobile-ads": "latest"
+    "react-native-google-mobile-ads": "latest",
+    "expo-clipboard": "latest"
   },
   "devDependencies": {
     "@babel/core": "latest"
