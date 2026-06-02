@@ -1,0 +1,18 @@
+No 'iosAppId' was provided. The native Google Mobile Ads SDK will crash on iOS without it.
+No 'iosAppId' was provided. The native Google Mobile Ads SDK will crash on iOS without it.
+No 'iosAppId' was provided. The native Google Mobile Ads SDK will crash on iOS without it.
+No 'iosAppId' was provided. The native Google Mobile Ads SDK will crash on iOS without it.
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Android Bundling failed 9530ms node_modules/expo/AppEntry.js (561 modules)
+
+SyntaxError: Error: /workspaces/fifa-worldcup-2026-predictor/App.js: Expecting Unicode escape sequence \uXXXX. (180:1)
+
+  178 | ];
+  179 |
+> 180 | \nimport React, { useEffect, useRef, useState } from 'react';
+      |  ^
+  181 | import { Alert, Animated, BackHandler, Image, Linking, Modal, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+  182 | import { StatusBar } from 'expo-status-bar';
+  183 | import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -1,32 +1,9 @@
 
-// PHASE3PH_MENU_RESTRUCTURE_HEADER_FINAL
-const PHASE3PH_MENU_SECTIONS = [
-  'Profile',
-  'Settings',
-  'Invite Friends',
-  'Privacy & Profile',
-  'About This App',
-  'Admin Control Panel'
-];
-
-const PHASE3PH_ABOUT_APP_TEXT =
-  'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
-
-const PHASE3PH_MENU_RESTRUCTURE_RULES = [
-  'Header shows app logo and app name only.',
-  'Virtual Beehive Inc. appears in Menu/About, not top header.',
-  'Main Menu shows high-level sections only.',
-  'Profile details belong inside Profile.',
-  'Notification and mood settings belong inside Settings.',
-  'Privacy, Terms, and Delete Profile belong inside Privacy & Profile.',
-  'Invite Friends uses one Share button only.'
-];
-
 // PHASE3PF_MENU_CLEANUP
 // Menu cleanup: remove confusing delete/copy/local-profile buttons from the public menu.
 const PHASE3PF_MENU_RULES = [
   'Keep Menu simple.',
-  'Keep Privacy Policy, Terms of Use, and Delete Profile / Data.',
+  'Keep Privacy Policy, Terms of Use, and Delete Account / Data.',
   'Remove  from visible menu.',
   'Remove  from visible menu unless debugging.',
   'Do not change sign-in/admin logic.'
@@ -235,9 +212,9 @@ const PHASE3N_QA_CHECKLIST = [
   'Groups and knockout bracket show correctly',
   'Leaderboard opens and pagination foundation is ready',
   'News detail opens',
-  'Privacy, Terms, and Delete Profile links open',
+  'Privacy, Terms, and Delete Account links open',
   'Full delete helper opens but is not tested on admin account',
-  'Settings appear',
+  'Notification preferences appear',
   'Celebration/share win appears when prediction earns points',
   'No Google AdMob placeholder visible when ads are off',
 ];
@@ -525,10 +502,10 @@ const buildPhase3IAInviteShareText = (profile, user) => {
   return `${avatar} ${name} invited you to join FIFA WorldCup 2026 Predictor.\n\nDownload the app and predict all WorldCup 2026 matches:\n\n${getPhase3IAFooter()}`;
 };
 
-// Phase 3D-B: Full Automatic Profile Deletion helper
+// Phase 3D-B: Full Automatic Account Deletion helper
 // This is intentionally defensive: it anonymizes profile data first, then attempts to delete
 // user-owned records and Firebase Auth. Firebase may require recent login for auth deletion.
-async function phase3DBDeleteProfile({ auth, db, user, clearLocalProfile, afterDeleted }) {
+async function phase3DBDeleteAccount({ auth, db, user, clearLocalProfile, afterDeleted }) {
   if (!user || !user.uid) {
     Alert.alert('Sign in required', 'Please sign in before requesting in-app account deletion.');
     return;
@@ -597,12 +574,12 @@ async function phase3DBDeleteProfile({ auth, db, user, clearLocalProfile, afterD
             // Delete Firebase Auth account last. This can fail if login is not recent.
             try {
               await deleteUser(user);
-              Alert.alert('Profile deleted', 'Your account deletion request was completed on this device.');
+              Alert.alert('Account deleted', 'Your account deletion request was completed on this device.');
               if (afterDeleted) afterDeleted();
             } catch (authError) {
               Alert.alert(
                 'Sign in again required',
-                'Your app data was deleted or anonymized where possible, but Firebase requires a recent sign-in before the login account can be fully deleted. Please sign out, sign in again, and tap Delete Profile again.'
+                'Your app data was deleted or anonymized where possible, but Firebase requires a recent sign-in before the login account can be fully deleted. Please sign out, sign in again, and tap Delete Account again.'
               );
             }
           } catch (error) {
@@ -765,20 +742,20 @@ async function openExternalUrl(url) {
   }
 }
 
-function deleteProfileRequestMessage(profile = {}) {
+function deleteAccountRequestMessage(profile = {}) {
   const email = safeText(profile?.email, 'the email used for my app account');
   const nickname = safeText(profile?.nickname || profile?.name, 'my account');
   return `Please delete my FIFA WorldCup 2026 Predictor account and associated app data.
 
-Profile email: ${email}
+Account email: ${email}
 Name or nickname: ${nickname}
 
 I understand this request may delete or anonymize my email, name, nickname, profile details, predictions, champion pick, best-player votes, and leaderboard records connected to my account.`;
 }
 
 async function emailDeleteRequest(profile = {}) {
-  const subject = encodeURIComponent('Delete My FIFA WorldCup 2026 Predictor Profile');
-  const body = encodeURIComponent(deleteProfileRequestMessage(profile));
+  const subject = encodeURIComponent('Delete My FIFA WorldCup 2026 Predictor Account');
+  const body = encodeURIComponent(deleteAccountRequestMessage(profile));
   await openExternalUrl(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
 }
 
@@ -804,7 +781,7 @@ async function copyShareMessage(message) {
     await Clipboard.setStringAsync(message);
     Alert.alert('Copied', 'Share message copied. You can paste it into any social app.');
   } catch (e) {
-    Alert.alert(' unavailable', e?.message || 'Unable to copy this message right now.');
+    Alert.alert('Copy unavailable', e?.message || 'Unable to copy this message right now.');
   }
 }
 
@@ -1142,7 +1119,7 @@ function CelebrationCard({ match, prediction, profile, dark }) {
         <Text style={styles.celebrationTitle}>{result.title}</Text>
         <Text style={{ color: fg }}>{result.message}</Text>
         <Text style={styles.celebration}>+{result.points} points</Text>
-        <ShareRow message={message} shareLabel="Share" copyLabel="" title="Share win" />
+        <ShareCopyRow message={message} shareLabel="Share" copyLabel="Copy" title="Share win" />
       </View>
     </View>
   );
@@ -1156,11 +1133,11 @@ function ButtonPill({ label, onPress, disabled, color }) {
   );
 }
 
-function ShareRow({ message, shareLabel = 'Share', copyLabel = '', title = APP_SHARE_NAME }) {
+function ShareCopyRow({ message, shareLabel = 'Share', copyLabel = 'Copy', title = APP_SHARE_NAME }) {
   const safeMessage = safeText(message, `${APP_SHARE_NAME}\n${APP_SHARE_URL}`);
   return (
     <View style={styles.shareBox}>
-      
+      <Text style={styles.shareHint}>Share to social apps or copy this branded message</Text>
       <View style={styles.shareRow}>
         <ButtonPill label={shareLabel} onPress={() => shareAppMessage(safeMessage, title)} color={COLORS.blue} />
         <ButtonPill label={copyLabel} onPress={() => copyShareMessage(safeMessage)} color={COLORS.slate} />
@@ -1281,7 +1258,7 @@ function Header({ dark, fg, setDark, setMenu }) {
     <View style={[styles.header, dark ? { backgroundColor: '#0f172a' } : { backgroundColor: '#ffffff' }] }>
       <Image source={require('./assets/app-logo.png')} style={styles.logo} />
       <View style={{ flex: 1 }}>
-        
+        <Text style={[styles.tiny, { color: COLORS.amber }]}>Virtual Beehive Inc.</Text>
         <Text style={[styles.title, { color: fg }]}>FIFA WorldCup 2026 Predictor</Text>
       </View>
       <TouchableOpacity onPress={() => setDark(!dark)} style={styles.iconBtn}>
@@ -1412,7 +1389,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <ScoreStepper label={activeMatch.teamB} value={b} setValue={setB} disabled={status.locked} />
           </View>
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
-          <ShareRow message={shareMessage} shareLabel="Share this prediction" copyLabel="" title="Share" />
+          <ShareCopyRow message={shareMessage} shareLabel="Share this prediction" copyLabel="Copy" title="Share" />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
             <Text style={styles.blackScore}>{activeMatch.teamA} {fakeAverage(activeMatch.id, 1)} - {fakeAverage(activeMatch.id, 2)} {activeMatch.teamB}</Text>
@@ -1624,7 +1601,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings, p
         <Text style={[styles.big, { color: fg }]}>Pick Your Champion</Text>
         <Text style={{ color: fg }}>Choose once. After confirmation, it is locked.</Text>
         <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>{champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}</Text>
-        {champion ? <ShareRow message={championShareMessage(champion, profile)} shareLabel="Share" copyLabel=" champion text" title="Share" /> : null}
+        {champion ? <ShareCopyRow message={championShareMessage(champion, profile)} shareLabel="Share" copyLabel="Copy champion text" title="Share" /> : null}
       </View>
 
       <Text style={[styles.sectionTitle, { color: fg }]}>Groups</Text>
@@ -1677,7 +1654,7 @@ function NewsDetail({ item, onClose, dark }) {
         <Text style={[styles.big, { color: fg }]}>{item.title}</Text>
         <Text style={{ color: COLORS.amber, fontWeight: '900' }}>Source: {item.source} • {item.date}</Text>
         <Text style={{ color: fg, fontSize: 16, marginTop: 16, lineHeight: 24 }}>{item.body}</Text>
-        <ShareRow message={newsShareMessage(item)} shareLabel="Share app with this news" copyLabel=" news text" title="Share news" />
+        <ShareCopyRow message={newsShareMessage(item)} shareLabel="Share app with this news" copyLabel="Copy news text" title="Share news" />
       </ScrollView>
     </SafeAreaView>
   );
@@ -1728,7 +1705,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       
-      <ShareRow message={leaderboardShareMessage(profile)} shareLabel="Share" copyLabel=" challenge text" title="Share leaderboard" />
+      <ShareCopyRow message={leaderboardShareMessage(profile)} shareLabel="Share" copyLabel="Copy challenge text" title="Share leaderboard" />
       <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: COLORS.amber }]}>
         <Text style={{ fontSize: 34 }}>{getAvatar(profile)}</Text>
         <View style={{ flex: 1 }}>
@@ -1767,7 +1744,7 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title="Sign in" onBack={onBack} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
-        <Text style={[styles.big, { color: fg }]}>Profile</Text>
+        <Text style={[styles.big, { color: fg }]}>Account</Text>
         <Text style={{ color: fg, marginBottom: 12 }}>Create an account or sign in to save your predictions, profile, and leaderboard progress. You can also continue as a guest.</Text>
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 10 }]}>Email / Password</Text>
         {['email', 'password', 'name', 'nickname', 'age', 'sex'].map((key) => (
@@ -2177,7 +2154,7 @@ function NotificationSettingsCard({ dark, fg }) {
 
   return (
     <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }]}>
-      <Text style={[styles.sectionTitle, { color: fg }]}>Settings</Text>
+      <Text style={[styles.sectionTitle, { color: fg }]}>Notifications</Text>
       <Text style={{ color: fg, marginBottom: 8 }}>
         Choose which reminders you want. Push notifications will be connected in a later update; these settings prepare your preferences now.
       </Text>
@@ -2230,7 +2207,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <ButtonPill label="Sign out" onPress={onSignOut} color="#64748b" />
         )}
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.big, { color: fg }]}>Profile</Text>
+          <Text style={[styles.big, { color: fg }]}>Account</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <Text style={{ fontSize: 42 }}>{profileAvatar}</Text>
             <View style={{ flex: 1 }}>
@@ -2243,34 +2220,34 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Age: {profileAge}</Text>
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
-          <Text style={{ color: fg }}>Profile status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
+          <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
           <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>notification preferences</Text>
         </View>
         <AvatarPicker dark={dark} fg={fg} profile={safeProfile} onPick={chooseAvatar} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
-          
-          <ShareRow message={inviteMessage} shareLabel="Share" copyLabel="" title="Invite friends" />
+          <Text style={{ color: fg }}>Share FIFA WorldCup 2026 Predictor with your social networks, or copy the message and paste it anywhere.</Text>
+          <ShareCopyRow message={inviteMessage} shareLabel="Share" copyLabel="Copy" title="Invite friends" />
         </View>
         <NotificationSettingsCard dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Profile</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Account</Text>
           <Text style={{ color: fg }}>Review how FIFA WorldCup 2026 Predictor handles account data, predictions, ads, leaderboard activity, and deletion requests.</Text>
           <ButtonPill label="Privacy Policy" onPress={() => openExternalUrl(PRIVACY_POLICY_URL)} color={COLORS.blue} />
           <ButtonPill label="Terms of Use" onPress={() => openExternalUrl(TERMS_URL)} color={COLORS.amber} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Delete Profile / Data</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Delete Account / Data</Text>
           <Text style={{ color: fg, lineHeight: 21 }}>
             You can request deletion of your FIFA WorldCup 2026 Predictor account and related app data. This may include your email, name, nickname, profile details, predictions, votes, champion pick, and leaderboard records connected to your account.
           </Text>
-          <ButtonPill label="Delete Profile / Data" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
+          <ButtonPill label="Delete Account / Data" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
           <ButtonPill label="Email deletion request" onPress={() => emailDeleteRequest(safeProfile)} color={COLORS.amber} />
           <ButtonPill label="
 
-Delete My Profile Permanently
-" onPress={() => copyShareMessage(deleteProfileRequestMessage(safeProfile))} color={COLORS.blue} />
+Delete My Account Permanently
+This option deletes or anonymizes your app profile, predictions, votes, champion pick, and leaderboard record where allowed. Firebase may ask you to sign in again before the login account can be fully deleted." onPress={() => copyShareMessage(deleteAccountRequestMessage(safeProfile))} color={COLORS.blue} />
           <ButtonPill label="" onPress={() => saveProfile({})} color="#64748b" />
         </View>
         {admin ? (
@@ -2508,8 +2485,8 @@ export default function App() {
       await AsyncStorage.setItem('profile', JSON.stringify(merged));
 
       Alert.alert(
-        mode === 'signup' ? 'Profile created' : 'Signed in',
-        merged?.isAdmin ? 'Admin access enabled.' : 'Profile is connected.'
+        mode === 'signup' ? 'Account created' : 'Signed in',
+        merged?.isAdmin ? 'Admin access enabled.' : 'Account is connected.'
       );
       return true;
     } catch (e) {
@@ -2611,10 +2588,10 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { minHeight: 118, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  header: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backButton: { backgroundColor: COLORS.amber, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
-  headerTitle: { flex: 1, fontSize: 26, fontWeight: '900' },
+  headerTitle: { flex: 1, fontSize: 24, fontWeight: '900' },
   logo: { width: 56, height: 56, borderRadius: 26 },
   iconBtn: { paddingHorizontal: 8, paddingVertical: 6 },
   tiny: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
@@ -2727,5 +2704,5 @@ const styles = StyleSheet.create({
 
 // PHASE_3DB_WIRING_NOTE:
 // To wire the final delete button, call this from the Menu delete-account section:
-// phase3DBDeleteProfile({ auth, db, user, clearLocalProfile: async () => {}, afterDeleted: () => {} })
+// phase3DBDeleteAccount({ auth, db, user, clearLocalProfile: async () => {}, afterDeleted: () => {} })
 // Replace auth/db/user names if this App.js uses different variable names.
