@@ -1353,14 +1353,13 @@ function ButtonPill({ label, onPress, disabled, color }) {
   );
 }
 
-function ShareRow({ message, shareLabel = 'Share', copyLabel = '', title = APP_SHARE_NAME }) {
+function ShareRow({ message, shareLabel = 'Share', title = APP_SHARE_NAME }) {
   const safeMessage = safeText(message, `${APP_SHARE_NAME}\n${APP_SHARE_URL}`);
   return (
     <View style={styles.shareBox}>
       
       <View style={styles.shareRow}>
         <ButtonPill label={shareLabel} onPress={() => shareAppMessage(safeMessage, title)} color={COLORS.blue} />
-        <ButtonPill label={copyLabel} onPress={() => copyShareMessage(safeMessage)} color={COLORS.slate} />
       </View>
     </View>
   );
