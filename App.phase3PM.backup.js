@@ -1,75 +1,4 @@
 
-// PHASE3PM_ADMIN_MEDIA_MANAGER_URL_ONLY
-// URL-only media foundation. No Firebase Storage upload is used in this phase.
-const PHASE3PM_MEDIA_PATHS = {
-  stadiums: 'media/stadiums',
-  teams: 'media/teams',
-  players: 'media/players',
-  coaches: 'media/coaches',
-};
-
-const phase3PMNormalizeId = (value = '') =>
-  String(value)
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-
-const phase3PMIsLikelyImageUrl = (url = '') => {
-  const clean = String(url || '').trim();
-  if (!clean) return false;
-  return /^https?:\/\//i.test(clean);
-};
-
-const phase3PMDirectImageHint =
-  'Use a direct image URL for this exact stadium, team, coach, or player. Do not use the same image URL for unrelated records.';
-
-const phase3PMBuildStadiumMediaId = (stadiumName = '', city = '') =>
-  `stadium_${phase3PMNormalizeId(stadiumName || city || 'unknown')}`;
-
-const phase3PMBuildTeamMediaId = (teamName = '') =>
-  `team_${phase3PMNormalizeId(teamName || 'unknown')}`;
-
-const phase3PMBuildPlayerMediaId = (teamName = '', jerseyNumber = '', playerName = '') =>
-  `player_${phase3PMNormalizeId(teamName || 'team')}_${phase3PMNormalizeId(jerseyNumber || playerName || 'unknown')}`;
-
-const phase3PMBuildCoachMediaId = (teamName = '', coachName = '') =>
-  `coach_${phase3PMNormalizeId(teamName || coachName || 'unknown')}`;
-
-const phase3PMMediaRecordExample = {
-  stadium: {
-    id: 'stadium_dallas',
-    name: 'Dallas Stadium',
-    imageUrl: '',
-    credit: '',
-    source: '',
-  },
-  player: {
-    id: 'player_usa_10',
-    teamId: 'team_usa',
-    jerseyNumber: '10',
-    name: '',
-    photoUrl: '',
-  },
-};
-
-const PHASE3PM_ADMIN_MEDIA_RULES = [
-  'Use unique IDs for each stadium/team/player/coach.',
-  'Paste only image URLs that belong to the exact record.',
-  'Do not reuse Mexico City Stadium image for Texas/Dallas stadium.',
-  'Do not reuse a USA player image for England or another team.',
-  'Firebase Storage upload is intentionally not included in this phase to avoid storage cost.'
-];
-
-// PHASE3PM_ADMIN_MEDIA_LABELS
-const PHASE3PM_ADMIN_MEDIA_LABELS = {
-  stadiumImageUrl: 'Exact stadium image URL',
-  teamImageUrl: 'Exact team image URL',
-  playerPhotoUrl: 'Exact player photo URL',
-  coachImageUrl: 'Exact coach image URL',
-  flagImageUrl: 'Exact flag image URL',
-};
-
 // PHASE3PL_DIRECT_UI_STRUCTURE_CLEANUP
 const PHASE3PL_MENU_SECTIONS = [
   'Account',
@@ -492,7 +421,7 @@ const PHASE3M_ADMIN_HELP_TEXT =
 
 // PHASE3M_DATA_VALIDATION_NOTES
 const PHASE3M_DATA_VALIDATION_NOTES = [
-  'Exact stadium image URL should point to a direct image file.',
+  'Stadium image URL should point to a direct image file.',
   'Coach and player images should only use reliable/permitted sources.',
   'No image upload is used in this phase.',
   'If an image fails, show text fallback instead of crashing.',
@@ -2221,9 +2150,9 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <TextInput placeholder="Collection: stadiums, teams, players, coaches" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Document ID, example: metlife or argentina" placeholderTextColor="#94a3b8" value={imageForm.docId} onChangeText={(v)=>setImageForm({...imageForm,docId:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Main image URL" placeholderTextColor="#94a3b8" value={imageForm.imageUrl} onChangeText={(v)=>setImageForm({...imageForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Exact stadium image URL" placeholderTextColor="#94a3b8" value={imageForm.stadiumImageUrl} onChangeText={(v)=>setImageForm({...imageForm,stadiumImageUrl:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Exact coach image URL" placeholderTextColor="#94a3b8" value={imageForm.coachImageUrl} onChangeText={(v)=>setImageForm({...imageForm,coachImageUrl:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Exact player photo URL" placeholderTextColor="#94a3b8" value={imageForm.playerImageUrl} onChangeText={(v)=>setImageForm({...imageForm,playerImageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Stadium image URL" placeholderTextColor="#94a3b8" value={imageForm.stadiumImageUrl} onChangeText={(v)=>setImageForm({...imageForm,stadiumImageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Coach image URL" placeholderTextColor="#94a3b8" value={imageForm.coachImageUrl} onChangeText={(v)=>setImageForm({...imageForm,coachImageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Player image URL" placeholderTextColor="#94a3b8" value={imageForm.playerImageUrl} onChangeText={(v)=>setImageForm({...imageForm,playerImageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Home jersey URL" placeholderTextColor="#94a3b8" value={imageForm.jerseyHomeUrl} onChangeText={(v)=>setImageForm({...imageForm,jerseyHomeUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Away jersey URL" placeholderTextColor="#94a3b8" value={imageForm.jerseyAwayUrl} onChangeText={(v)=>setImageForm({...imageForm,jerseyAwayUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Image notes optional" placeholderTextColor="#94a3b8" value={imageForm.notes} onChangeText={(v)=>setImageForm({...imageForm,notes:v})} style={inputStyle} />
