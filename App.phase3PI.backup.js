@@ -1,24 +1,4 @@
 
-// PHASE3PI_GROUPS_SPONSOR_FINAL_CLEANUP
-const PHASE3PI_GROUP_TEAM_DISPLAY_RULE =
-  'Final group team rows show only flag, team name, and continent/confederation.';
-
-const PHASE3PI_SPONSOR_CTA = 'Visit Hobbee.FUN';
-
-const phase3PIContinentFromTeam = (team = {}) => {
-  const raw = team.continent || team.confederation || team.region || team.zone || '';
-  const key = String(raw).trim().toUpperCase();
-  const map = {
-    UEFA: 'Europe',
-    CAF: 'Africa',
-    AFC: 'Asia',
-    CONCACAF: 'North America',
-    CONMEBOL: 'South America',
-    OFC: 'Oceania',
-  };
-  return map[key] || raw || 'Continent TBD';
-};
-
 // PHASE3PH_MENU_RESTRUCTURE_HEADER_FINAL
 const PHASE3PH_MENU_SECTIONS = [
   'Profile',
@@ -1250,7 +1230,7 @@ function SponsorBanner({ dark, sponsor }) {
 
   if (sponsor?.active === false) return null;
   const name = safeText(sponsor?.name, 'Hobbee.FUN');
-  const message = safeText(sponsor?.message, 'Visit Hobbee.FUN');
+  const message = safeText(sponsor?.message, 'Discover hobbies and share predictions with fans.');
   const callToAction = safeText(sponsor?.callToAction, 'Visit sponsor');
   const linkUrl = safeText(sponsor?.linkUrl || sponsor?.url, '');
 
@@ -1265,7 +1245,7 @@ function SponsorBanner({ dark, sponsor }) {
         <Text style={[styles.sponsorLabel, { color: dark ? '#94a3b8' : '#64748b' }]}>Sponsored by</Text>
         <Text style={[styles.sponsorName, { color: dark ? '#ffffff' : '#0f172a' }]} numberOfLines={1}>{name}</Text>
         <Animated.Text style={[styles.sponsorText, { transform: [{ translateX: x }] }]} numberOfLines={1}>
-          {message}     {callToAction}
+          {message}   •   {callToAction}
         </Animated.Text>
       </View>
     </TouchableOpacity>
@@ -1354,7 +1334,7 @@ function Matches({ dark, fg, predictions, setSelected, adSettings }) {
               </View>
               <Text style={[styles.matchTeams, { color: fg }]}>{FLAGS[match.teamA] || '🏳️'} {match.teamA}  vs  {FLAGS[match.teamB] || '🏳️'} {match.teamB}</Text>
               <Text style={{ color: fg }}>{match.stage} {match.group ? `• Group ${match.group}` : ''}</Text>
-              <Text style={{ color: fg }}>{match.stadium} {match.city}</Text>
+              <Text style={{ color: fg }}>{match.stadium} • {match.city}</Text>
               {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
             </TouchableOpacity>
             {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="matches" adSettings={adSettings} />}
@@ -1384,7 +1364,7 @@ function StadiumCard({ match, dark, fg }) {
       <Text style={styles.stadiumEmoji}>🏟️</Text>
       <View style={styles.stadiumOverlay}>
         <Text style={styles.stadiumTitle}>{match.stadium}</Text>
-        <Text style={styles.stadiumText}>{match.city}, {match.state} {match.country}</Text>
+        <Text style={styles.stadiumText}>{match.city}, {match.state} • {match.country}</Text>
         <Text style={styles.stadiumText}>Capacity: {match.capacity}</Text>
         <Text style={styles.stadiumText}>Ticket range: {match.ticketRange}</Text>
       </View>
@@ -1523,7 +1503,7 @@ function TeamCompare({ a, b, dark, setTeamOpen }) {
                 <View key={p.number} style={styles.playerMini}>
                   <Text style={{ fontSize: 32, textAlign: 'center' }}>{p.photo}</Text>
                   <Text style={{ color: fg, fontWeight: '900' }}>#{p.number} {p.name}</Text>
-                  <Text style={{ color: fg, fontSize: 11 }}>{p.position} {p.height} {p.weight}</Text>
+                  <Text style={{ color: fg, fontSize: 11 }}>{p.position} • {p.height} • {p.weight}</Text>
                 </View>
               ))}
             </TouchableOpacity>
@@ -1615,7 +1595,7 @@ function GroupTableCard({ group, teams, fg, dark, champion, chooseChampion, setT
       <Text style={styles.groupHeader}>Group {group}</Text>
       {teams.map((team, index) => {
         const isChampion = champion === team;
-        const seedLabel = index < 2 ? phase3PIContinentFromTeam(team) : '';
+        const seedLabel = index < 2 ? `Seed ${index + 1}` : 'Group team';
         return (
           <TouchableOpacity
             key={team}
@@ -1626,7 +1606,7 @@ function GroupTableCard({ group, teams, fg, dark, champion, chooseChampion, setT
             <Text style={{ fontSize: 22 }}>{FLAGS[team]}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '900', color: fg }}>{team}</Text>
-              <Text style={{ color: dark ? '#94a3b8' : '#64748b', fontSize: 11 }}>{seedLabel} </Text>
+              <Text style={{ color: dark ? '#94a3b8' : '#64748b', fontSize: 11 }}>{seedLabel} • tap to pick champion • long press for team info</Text>
             </View>
             {isChampion && <Text style={styles.championBadge}>★</Text>}
           </TouchableOpacity>
@@ -1648,7 +1628,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings, p
       </View>
 
       <Text style={[styles.sectionTitle, { color: fg }]}>Groups</Text>
-      
+      <Text style={{ color: fg, marginBottom: 10 }}>Group teams are shown first, then the knockout map appears below just like a tournament board.</Text>
       <View style={styles.groupGrid}>
         {groupEntries.map(([group, arr]) => (
           <GroupTableCard
@@ -1677,7 +1657,7 @@ function News({ dark, fg, setNewsOpen, adSettings }) {
         <View key={n.id}>
           <TouchableOpacity onPress={() => setNewsOpen(n)} style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>{n.title}</Text>
-            <Text style={{ color: COLORS.amber }}>{n.source} {n.date}</Text>
+            <Text style={{ color: COLORS.amber }}>{n.source} • {n.date}</Text>
             <Text style={{ color: fg }}>Tap to read full news</Text>
           </TouchableOpacity>
           {index === 0 && <AdBox dark={dark} tone={1} placement="news" adSettings={adSettings} />}
@@ -1695,7 +1675,7 @@ function NewsDetail({ item, onClose, dark }) {
       <BackHeader title="News" onBack={onClose} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
         <Text style={[styles.big, { color: fg }]}>{item.title}</Text>
-        <Text style={{ color: COLORS.amber, fontWeight: '900' }}>Source: {item.source} {item.date}</Text>
+        <Text style={{ color: COLORS.amber, fontWeight: '900' }}>Source: {item.source} • {item.date}</Text>
         <Text style={{ color: fg, fontSize: 16, marginTop: 16, lineHeight: 24 }}>{item.body}</Text>
         <ShareRow message={newsShareMessage(item)} shareLabel="Share app with this news" copyLabel=" news text" title="Share news" />
       </ScrollView>
@@ -1753,7 +1733,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
         <Text style={{ fontSize: 34 }}>{getAvatar(profile)}</Text>
         <View style={{ flex: 1 }}>
           <Text style={{ color: fg, fontWeight: '900' }}>Your public leaderboard look</Text>
-          <Text style={{ color: fg }}>{displayNick(profile)} avatar can be changed in Menu</Text>
+          <Text style={{ color: fg }}>{displayNick(profile)} • avatar can be changed in Menu</Text>
         </View>
       </View>
       {visibleList.map((u, i) => (
@@ -1763,7 +1743,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
             <Text style={{ fontSize: 28 }}>{u.photo}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}</Text>
-              <Text style={{ color: fg }}>{u.correct} correct {u.points} pts</Text>
+              <Text style={{ color: fg }}>{u.correct} correct • {u.points} pts</Text>
             </View>
           </View>
           {(i + 1) % 3 === 0 && i !== visibleList.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
@@ -1810,7 +1790,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
 
   const [sponsorForm, setSponsorForm] = useState({
     name: 'Hobbee.FUN',
-    message: 'Visit Hobbee.FUN',
+    message: 'Discover hobbies and share predictions with fans.',
     callToAction: 'Visit Hobbee.FUN',
     linkUrl: 'https://hobbee.fun',
     logoUrl: '',
@@ -2050,7 +2030,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }] }>
           <Text style={[styles.sectionTitle, { color: fg }]}>AdMob Display Control</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Controls Google ad placements without rebuilding. These switches now save to Firebase and apply immediately on this device after Save.</Text>
-          <Text style={{ color: fg, fontWeight: '900', marginBottom: 8 }}>Current draft: Ads {adForm.adsEnabled ? 'ON' : 'OFF'} Test ads {adForm.useTestAds ? 'ON' : 'OFF'} Auto-hide {adForm.autoHideOnNoFill ? 'ON' : 'OFF'} Non-personalized {adForm.nonPersonalized ? 'ON' : 'OFF'}</Text>
+          <Text style={{ color: fg, fontWeight: '900', marginBottom: 8 }}>Current draft: Ads {adForm.adsEnabled ? 'ON' : 'OFF'} • Test ads {adForm.useTestAds ? 'ON' : 'OFF'} • Auto-hide {adForm.autoHideOnNoFill ? 'ON' : 'OFF'} • Non-personalized {adForm.nonPersonalized ? 'ON' : 'OFF'}</Text>
           <ToggleButton label="Ads" active={adForm.adsEnabled} onPress={() => setAdForm({ ...adForm, adsEnabled: !adForm.adsEnabled })} />
           <ToggleButton label="Test ads" active={adForm.useTestAds} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={COLORS.amber} />
           <ToggleButton label="Auto-hide empty ads" active={adForm.autoHideOnNoFill} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} />
@@ -2214,7 +2194,7 @@ function NotificationSettingsCard({ dark, fg }) {
             backgroundColor: prefs[key] ? 'rgba(34,197,94,0.12)' : 'transparent',
           }}
         >
-          <Text style={{ color: fg, fontWeight: '900' }}>{prefs[key] ? 'ON' : 'OFF'} {label}</Text>
+          <Text style={{ color: fg, fontWeight: '900' }}>{prefs[key] ? 'ON' : 'OFF'} • {label}</Text>
           <Text style={{ color: fg, opacity: 0.85, marginTop: 3 }}>{help}</Text>
         </TouchableOpacity>
       ))}
@@ -2667,11 +2647,11 @@ const styles = StyleSheet.create({
   shareHint: { color: '#38bdf8', fontWeight: '800', marginBottom: 4, fontSize: 12 },
   shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
   sponsor: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
-  sponsorLogo: { width: 86, height: 86, borderRadius: 14, backgroundColor: '#ffffff' },
+  sponsorLogo: { width: 74, height: 60, borderRadius: 14, backgroundColor: '#ffffff' },
   sponsorLogoFallback: { width: 74, height: 60, borderRadius: 14, borderWidth: 1, borderColor: COLORS.amber, alignItems: 'center', justifyContent: 'center' },
   sponsorLabel: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
   sponsorName: { fontWeight: '900', fontSize: 18, lineHeight: 22 },
-  sponsorText: { fontWeight: '800', fontSize: 18, color: COLORS.amber, width: 760, marginTop: 2 },
+  sponsorText: { fontWeight: '800', fontSize: 14, color: COLORS.amber, width: 760, marginTop: 2 },
   adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10, overflow: 'hidden' },
   hiddenAdProbe: { height: 1, opacity: 0, overflow: 'hidden' },
   stepper: { flex: 1, alignItems: 'center', backgroundColor: '#02061788', padding: 10, borderRadius: 14 },
