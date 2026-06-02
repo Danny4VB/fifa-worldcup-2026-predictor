@@ -1,38 +1,4 @@
 
-// PHASE3PB_FINAL_SHARE_TEXT
-const PHASE3PB_SHARE_LINK = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
-const PHASE3PB_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
-
-const getPhase3PBShareAvatar = (profile) =>
-  profile?.avatar || profile?.avatarEmoji || profile?.selectedAvatar || '⚽';
-
-const getPhase3PBShareName = (profile, user) =>
-  profile?.nickname ||
-  profile?.name ||
-  user?.displayName ||
-  user?.email?.split?.('@')?.[0] ||
-  'A WorldCup fan';
-
-const buildPhase3PBMatchPredictionText = ({ profile, user, teamA, teamB, flagA = '', flagB = '', scoreA = '', scoreB = '' } = {}) => {
-  const avatar = getPhase3PBShareAvatar(profile);
-  const name = getPhase3PBShareName(profile, user);
-  const left = `${flagA ? flagA + ' ' : ''}${teamA || 'Team A'}`.trim();
-  const right = `${flagB ? flagB + ' ' : ''}${teamB || 'Team B'}`.trim();
-  return `${avatar} ${name} predicted:\n\n${left} ${scoreA} - ${scoreB} ${right}\n\nDo you agree, or do you think the result will be different?\n\nDownload the app and predict all WorldCup 2026 matches:\n${PHASE3PB_SHARE_LINK}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
-};
-
-const buildPhase3PBGenericChallengeText = ({ profile, user, subject = 'WorldCup 2026' } = {}) => {
-  const avatar = getPhase3PBShareAvatar(profile);
-  const name = getPhase3PBShareName(profile, user);
-  return `${avatar} ${name} is challenging you on FIFA WorldCup 2026 Predictor.\n\nDo you agree with their picks, or do you think the results will be different?\n\nDownload the app and predict all WorldCup 2026 matches:\n${PHASE3PB_SHARE_LINK}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
-};
-
-const buildPhase3PBChampionChallengeText = ({ profile, user, champion = 'their champion pick' } = {}) => {
-  const avatar = getPhase3PBShareAvatar(profile);
-  const name = getPhase3PBShareName(profile, user);
-  return `${avatar} ${name} predicted ${champion} will win WorldCup 2026.\n\nDo you agree, or do you think another team will win?\n\nDownload the app and predict all WorldCup 2026 matches:\n${PHASE3PB_SHARE_LINK}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
-};
-\n
 // PHASE3PA_HEADER_LAYOUT_POLISH
 // Header visual polish only: taller header, larger app logo, more breathing room under phone status bar.
 
@@ -71,7 +37,7 @@ const PHASE3O_IOS_LINK_TODO = 'Add Apple App Store link after iOS app is built a
 
 
 // PHASE3N_RELEASE_QA_DIAGNOSTICS
-const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-B final share text polish';
+const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-A header layout polish';
 
 const PHASE3N_QA_CHECKLIST = [
   'App opens without crash',
@@ -325,7 +291,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-B final share text polish';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-A header layout polish';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
@@ -360,12 +326,12 @@ const getPhase3IAShareName = (profile, user) => {
 };
 
 const getPhase3IAFooter = () =>
-  `Download the app and predict all WorldCup 2026 matches:\n${APP_SHARE_URL}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.`;
+  `Download the app:\n${APP_SHARE_URL}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.`;
 
 const buildPhase3IAMatchShareText = (profile, user, matchText, predictionText) => {
   const avatar = getPhase3IAShareAvatar(profile);
   const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} thinks this match will end:\n\n${predictionText || matchText}\n\nDo you agree, or do you think the result will be different?\n\n${getPhase3IAFooter()}`;
+  return `${avatar} ${name} thinks this match will end:\n\n${predictionText || matchText}\n\nDo you agree? Tell them what you think by predicting all WorldCup 2026 matches on FIFA WorldCup 2026 Predictor — then share your predictions with the world.\n\n${getPhase3IAFooter()}`;
 };
 
 const buildPhase3IAChampionShareText = (profile, user, championText) => {
@@ -383,7 +349,7 @@ const buildPhase3IALeaderboardShareText = (profile, user) => {
 const buildPhase3IAInviteShareText = (profile, user) => {
   const avatar = getPhase3IAShareAvatar(profile);
   const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} invited you to join FIFA WorldCup 2026 Predictor.\n\nDownload the app and predict all WorldCup 2026 matches:\n\n${getPhase3IAFooter()}`;
+  return `${avatar} ${name} invited you to join FIFA WorldCup 2026 Predictor.\n\nPredict WorldCup 2026 matches, choose your champion, follow groups, and compete on the leaderboard.\n\n${getPhase3IAFooter()}`;
 };
 
 
@@ -585,8 +551,8 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
 
 const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
 const APP_SHARE_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
-const APP_BRAND_LINE = 'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
-const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
+const APP_BRAND_LINE = 'A product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
+const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #WorldCupPredictor';
 const PRIVACY_POLICY_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-privacy-policy';
 const TERMS_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-terms';
 const DELETE_ACCOUNT_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-delete-account';
@@ -649,7 +615,7 @@ async function emailDeleteRequest(profile = {}) {
 
 
 function brandedShareFooter() {
-  return `Download the app and predict all WorldCup 2026 matches:
+  return `Download the app:
 ${APP_SHARE_URL}
 
 ${APP_SHARE_NAME}
@@ -682,7 +648,7 @@ function matchShareMessage(match, scoreA, scoreB, profile = {}) {
   return `${displayNick(profile)} predicted:
 ${FLAGS[match.teamA] || ''} ${match.teamA} ${scoreA} - ${scoreB} ${match.teamB} ${FLAGS[match.teamB] || ''}
 
-Download the app and predict all WorldCup 2026 matches:
+Predict WorldCup 2026 matches, choose your champion, follow groups, and compete on the leaderboard.
 
 ${brandedShareFooter()}`;
 }
@@ -714,7 +680,7 @@ ${brandedShareFooter()}`;
 function appInviteShareMessage(profile = {}) {
   return `${displayNick(profile)} invited you to join ${APP_SHARE_NAME}.
 
-Download the app and predict all WorldCup 2026 matches:
+Predict WorldCup 2026 matches, choose your champion, follow groups, and compete on the leaderboard.
 
 ${brandedShareFooter()}`;
 }
@@ -1010,7 +976,7 @@ function CelebrationCard({ match, prediction, profile, dark }) {
         <Text style={styles.celebrationTitle}>{result.title}</Text>
         <Text style={{ color: fg }}>{result.message}</Text>
         <Text style={styles.celebrationPoints}>+{result.points} points</Text>
-        <ShareCopyRow message={message} shareLabel="Share" copyLabel="Copy" title="Share win" />
+        <ShareCopyRow message={message} shareLabel="Share this win" copyLabel="Copy win text" title="Share prediction win" />
       </View>
     </View>
   );
@@ -1024,7 +990,7 @@ function ButtonPill({ label, onPress, disabled, color }) {
   );
 }
 
-function ShareCopyRow({ message, shareLabel = 'Share', copyLabel = 'Copy', title = APP_SHARE_NAME }) {
+function ShareCopyRow({ message, shareLabel = 'Share', copyLabel = 'Copy text', title = APP_SHARE_NAME }) {
   const safeMessage = safeText(message, `${APP_SHARE_NAME}\n${APP_SHARE_URL}`);
   return (
     <View style={styles.shareBox}>
@@ -1282,7 +1248,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <ScoreStepper label={activeMatch.teamB} value={b} setValue={setB} disabled={status.locked} />
           </View>
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
-          <ShareCopyRow message={shareMessage} shareLabel="Share this prediction" copyLabel="Copy" title="Share" />
+          <ShareCopyRow message={shareMessage} shareLabel="Share this prediction" copyLabel="Copy prediction text" title="Share prediction" />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
             <Text style={styles.blackScore}>{activeMatch.teamA} {fakeAverage(activeMatch.id, 1)} - {fakeAverage(activeMatch.id, 2)} {activeMatch.teamB}</Text>
@@ -1494,7 +1460,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings, p
         <Text style={[styles.big, { color: fg }]}>Pick Your Champion</Text>
         <Text style={{ color: fg }}>Choose once. After confirmation, it is locked.</Text>
         <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>{champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}</Text>
-        {champion ? <ShareCopyRow message={championShareMessage(champion, profile)} shareLabel="Share" copyLabel="Copy champion text" title="Share" /> : null}
+        {champion ? <ShareCopyRow message={championShareMessage(champion, profile)} shareLabel="Share champion pick" copyLabel="Copy champion text" title="Share champion pick" /> : null}
       </View>
 
       <Text style={[styles.sectionTitle, { color: fg }]}>Groups</Text>
@@ -1598,7 +1564,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       <Text style={{ color: fg }}>Cost-controlled leaderboard view. The app loads a limited page first, then users can load more.</Text>
-      <ShareCopyRow message={leaderboardShareMessage(profile)} shareLabel="Share" copyLabel="Copy challenge text" title="Share leaderboard" />
+      <ShareCopyRow message={leaderboardShareMessage(profile)} shareLabel="Share leaderboard challenge" copyLabel="Copy challenge text" title="Share leaderboard" />
       <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: COLORS.amber }]}>
         <Text style={{ fontSize: 34 }}>{getAvatar(profile)}</Text>
         <View style={{ flex: 1 }}>
@@ -2123,7 +2089,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
           <Text style={{ color: fg }}>Share FIFA WorldCup 2026 Predictor with your social networks, or copy the message and paste it anywhere.</Text>
-          <ShareCopyRow message={inviteMessage} shareLabel="Share" copyLabel="Copy" title="Invite friends" />
+          <ShareCopyRow message={inviteMessage} shareLabel="Share app invite" copyLabel="Copy invite text" title="Invite friends" />
         </View>
         <NotificationSettingsCard dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
