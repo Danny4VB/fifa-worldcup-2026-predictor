@@ -9,54 +9,6 @@ import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads'
 import * as Clipboard from 'expo-clipboard';
 
 
-
-// PHASE3IA_PERSONALIZED_SHARE_HELPERS
-const APP_SHARE_URL = typeof APP_SHARE_URL !== 'undefined'
-  ? APP_SHARE_URL
-  : 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
-
-const getPhase3IAShareAvatar = (profile) => {
-  return profile?.avatar || profile?.avatarEmoji || profile?.selectedAvatar || '⚽';
-};
-
-const getPhase3IAShareName = (profile, user) => {
-  return (
-    profile?.nickname ||
-    profile?.name ||
-    user?.displayName ||
-    user?.email?.split?.('@')?.[0] ||
-    'A WorldCup fan'
-  );
-};
-
-const getPhase3IAFooter = () =>
-  `Download the app:\n${APP_SHARE_URL}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.`;
-
-const buildPhase3IAMatchShareText = (profile, user, matchText, predictionText) => {
-  const avatar = getPhase3IAShareAvatar(profile);
-  const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} thinks this match will end:\n\n${predictionText || matchText}\n\nDo you agree? Tell them what you think by predicting all WorldCup 2026 matches on FIFA WorldCup 2026 Predictor — then share your predictions with the world.\n\n${getPhase3IAFooter()}`;
-};
-
-const buildPhase3IAChampionShareText = (profile, user, championText) => {
-  const avatar = getPhase3IAShareAvatar(profile);
-  const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} thinks ${championText} will win WorldCup 2026.\n\nDo you agree? Choose your champion, predict every match, and share your picks with the world on FIFA WorldCup 2026 Predictor.\n\n${getPhase3IAFooter()}`;
-};
-
-const buildPhase3IALeaderboardShareText = (profile, user) => {
-  const avatar = getPhase3IAShareAvatar(profile);
-  const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} is competing on the FIFA WorldCup 2026 Predictor leaderboard.\n\nPredict all WorldCup 2026 matches, challenge your friends, and share your predictions with the world.\n\n${getPhase3IAFooter()}`;
-};
-
-const buildPhase3IAInviteShareText = (profile, user) => {
-  const avatar = getPhase3IAShareAvatar(profile);
-  const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} invited you to join FIFA WorldCup 2026 Predictor.\n\nPredict WorldCup 2026 matches, choose your champion, follow groups, and compete on the leaderboard.\n\n${getPhase3IAFooter()}`;
-};
-
-
 // Phase 3D-B: Full Automatic Account Deletion helper
 // This is intentionally defensive: it anonymizes profile data first, then attempts to delete
 // user-owned records and Firebase Auth. Firebase may require recent login for auth deletion.
@@ -352,7 +304,7 @@ function matchShareMessage(match, scoreA, scoreB, profile = {}) {
   return `${displayNick(profile)} predicted:
 ${FLAGS[match.teamA] || ''} ${match.teamA} ${scoreA} - ${scoreB} ${match.teamB} ${FLAGS[match.teamB] || ''}
 
-Predict WorldCup 2026 matches, choose your champion, follow groups, and compete on the leaderboard.
+Make your own WorldCup 2026 predictions, choose your champion, follow groups, and compete on the leaderboard.
 
 ${brandedShareFooter()}`;
 }
