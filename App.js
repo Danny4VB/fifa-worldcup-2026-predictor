@@ -297,9 +297,6 @@ const PHASE3K_ADMIN_VALIDATION_NOTES = [
 
 
 // PHASE3IA_PERSONALIZED_SHARE_HELPERS
-const APP_SHARE_URL = typeof APP_SHARE_URL !== 'undefined'
-  ? APP_SHARE_URL
-  : 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
 
 const getPhase3IAShareAvatar = (profile) => {
   return profile?.avatar || profile?.avatarEmoji || profile?.selectedAvatar || '⚽';
