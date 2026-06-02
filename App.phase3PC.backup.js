@@ -1,44 +1,4 @@
 
-// PHASE3PC_GROUPS_TEAM_CLEANUP
-const PHASE3PC_CONFEDERATION_LABELS = {
-  UEFA: 'Europe',
-  CAF: 'Africa',
-  AFC: 'Asia',
-  CONCACAF: 'North America',
-  CONMEBOL: 'South America',
-  OFC: 'Oceania',
-};
-
-const getPhase3PCContinentLabel = (team = {}) => {
-  const raw =
-    team.continent ||
-    team.confederation ||
-    team.region ||
-    team.zone ||
-    '';
-  const key = String(raw).trim().toUpperCase();
-  return PHASE3PC_CONFEDERATION_LABELS[key] || raw || 'Continent TBD';
-};
-
-const buildPhase3PCGroupTeamLine = (team = {}) => ({
-  flag: team.flag || '',
-  name: team.name || team.team || 'Team TBD',
-  continent: getPhase3PCContinentLabel(team),
-});
-
-const PHASE3PC_GROUPS_DISPLAY_RULE =
-  'Groups tab team cards should show only flag, team name, and continent/confederation.';
-
-
-// PHASE3PC_BRACKET_NEXT_STEP_NOTES
-const PHASE3PC_BRACKET_NEXT_STEP_NOTES = [
-  'Full bracket redesign should be handled separately.',
-  'Recommended next phase: Phase 3P-D full knockout bracket diagram.',
-  'Bracket may need a dedicated landscape-style screen or horizontal scroll.',
-  'Round of 32/16/quarter/semi/final should be generated from match results/admin data later.'
-];
-
-\n
 // PHASE3PB_FINAL_SHARE_TEXT
 const PHASE3PB_SHARE_LINK = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
 const PHASE3PB_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
@@ -111,7 +71,7 @@ const PHASE3O_IOS_LINK_TODO = 'Add Apple App Store link after iOS app is built a
 
 
 // PHASE3N_RELEASE_QA_DIAGNOSTICS
-const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-C groups team card cleanup';
+const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-B final share text polish';
 
 const PHASE3N_QA_CHECKLIST = [
   'App opens without crash',
@@ -280,7 +240,7 @@ const PHASE3L_SCORE_RULES = {
   correctWinner: 10,
 };
 
-const calculatePhase3LPrediction = (prediction, match) => {
+const calculatePhase3LPredictionPoints = (prediction, match) => {
   if (!prediction || !match) return 0;
 
   const status = String(match.status || '').toLowerCase();
@@ -365,7 +325,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-C groups team card cleanup';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-B final share text polish';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
@@ -911,7 +871,7 @@ function buildFixtures() {
       games.push({
         id,
         group,
-        stage: '',
+        stage: 'Group Stage',
         matchNo: id,
         teamA: teams[a],
         teamB: teams[b],
@@ -1049,7 +1009,7 @@ function CelebrationCard({ match, prediction, profile, dark }) {
       <View style={{ flex: 1 }}>
         <Text style={styles.celebrationTitle}>{result.title}</Text>
         <Text style={{ color: fg }}>{result.message}</Text>
-        <Text style={styles.celebration}>+{result.points} points</Text>
+        <Text style={styles.celebrationPoints}>+{result.points} points</Text>
         <ShareCopyRow message={message} shareLabel="Share" copyLabel="Copy" title="Share win" />
       </View>
     </View>
@@ -2555,7 +2515,7 @@ const styles = StyleSheet.create({
   celebrationCard: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', borderWidth: 2, borderColor: '#fbbf24', borderRadius: 18, padding: 14, marginTop: 14, backgroundColor: 'rgba(251,191,36,0.14)' },
   celebrationEmoji: { fontSize: 42 },
   celebrationTitle: { color: '#fbbf24', fontSize: 18, fontWeight: '900', marginBottom: 4 },
-  celebration: { color: '#22c55e', fontWeight: '900', marginTop: 6 },
+  celebrationPoints: { color: '#22c55e', fontWeight: '900', marginTop: 6 },
   shareBox: { borderWidth: 1, borderColor: '#38bdf8', borderRadius: 14, padding: 10, marginTop: 12, marginBottom: 8, backgroundColor: 'rgba(56,189,248,0.08)' },
   shareHint: { color: '#38bdf8', fontWeight: '800', marginBottom: 4, fontSize: 12 },
   shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
