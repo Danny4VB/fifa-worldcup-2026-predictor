@@ -1,102 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Image, Linking, Modal, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Animated,
+  BackHandler,
+  Image,
+  Linking,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, deleteDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import * as Clipboard from 'expo-clipboard';
-
-
-// Phase 3D-B: Full Automatic Account Deletion helper
-// This is intentionally defensive: it anonymizes profile data first, then attempts to delete
-// user-owned records and Firebase Auth. Firebase may require recent login for auth deletion.
-async function phase3DBDeleteAccount({ auth, db, user, clearLocalProfile, afterDeleted }) {
-  if (!user || !user.uid) {
-    Alert.alert('Sign in required', 'Please sign in before requesting in-app account deletion.');
-    return;
-  }
-
-  Alert.alert(
-    'Delete account?',
-    'This will delete or anonymize your FIFA WorldCup 2026 Predictor account data connected to this device. This action cannot be undone.',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const uid = user.uid;
-            const deletedAt = new Date();
-
-            // Keep an anonymized deletion record for compliance/security without personal profile data.
-            try {
-              await setDoc(doc(db, 'deletedUsers', uid), {
-                uid,
-                deletedAt: serverTimestamp ? serverTimestamp() : deletedAt.toISOString(),
-                reason: 'user_requested_in_app_deletion',
-                app: 'FIFA WorldCup 2026 Predictor'
-              }, { merge: true });
-            } catch (e) {}
-
-            // Remove/anonymize user profile.
-            try {
-              await setDoc(doc(db, 'users', uid), {
-                email: null,
-                name: 'Deleted User',
-                nickname: 'Deleted User',
-                age: null,
-                sex: null,
-                country: null,
-                avatar: null,
-                photoUrl: null,
-                isDeleted: true,
-                deletedAt: serverTimestamp ? serverTimestamp() : deletedAt.toISOString(),
-                updatedAt: serverTimestamp ? serverTimestamp() : deletedAt.toISOString()
-              }, { merge: true });
-            } catch (e) {}
-
-            // Delete user-owned records where security rules allow it.
-            const collectionsToClean = ['predictions', 'bestPlayerVotes'];
-            for (const colName of collectionsToClean) {
-              try {
-                const q = query(collection(db, colName), where('userId', '==', uid));
-                const snap = await getDocs(q);
-                const batch = writeBatch(db);
-                snap.forEach((d) => batch.delete(d.ref));
-                if (!snap.empty) await batch.commit();
-              } catch (e) {}
-            }
-
-            // Delete champion pick if document id is uid.
-            try { await deleteDoc(doc(db, 'championPicks', uid)); } catch (e) {}
-            try { await deleteDoc(doc(db, 'leaderboard', uid)); } catch (e) {}
-
-            if (clearLocalProfile) {
-              try { await clearLocalProfile(); } catch (e) {}
-            }
-
-            // Delete Firebase Auth account last. This can fail if login is not recent.
-            try {
-              await deleteUser(user);
-              Alert.alert('Account deleted', 'Your account deletion request was completed on this device.');
-              if (afterDeleted) afterDeleted();
-            } catch (authError) {
-              Alert.alert(
-                'Sign in again required',
-                'Your app data was deleted or anonymized where possible, but Firebase requires a recent sign-in before the login account can be fully deleted. Please sign out, sign in again, and tap Delete Account again.'
-              );
-            }
-          } catch (error) {
-            Alert.alert('Deletion failed', error?.message || 'Something went wrong. Please try again or use the delete account webpage.');
-          }
-        }
-      }
-    ]
-  );
-}
 
 const COLORS = {
   darkBg: '#070b12',
@@ -1762,10 +1687,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           </Text>
           <ButtonPill label="Open Delete Account Page" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
           <ButtonPill label="Email Deletion Request" onPress={() => emailDeleteRequest(safeProfile)} color={COLORS.amber} />
-          <ButtonPill label="Copy Deletion Request Text
-
-Delete My Account Permanently
-This option deletes or anonymizes your app profile, predictions, votes, champion pick, and leaderboard record where allowed. Firebase may ask you to sign in again before the login account can be fully deleted." onPress={() => copyShareMessage(deleteAccountRequestMessage(safeProfile))} color={COLORS.blue} />
+          <ButtonPill label="Copy Deletion Request Text" onPress={() => copyShareMessage(deleteAccountRequestMessage(safeProfile))} color={COLORS.blue} />
           <ButtonPill label="Clear local profile on this phone" onPress={() => saveProfile({})} color="#64748b" />
         </View>
         {admin ? (
@@ -2219,9 +2141,3 @@ const styles = StyleSheet.create({
   },
 
 });
-
-
-// PHASE_3DB_WIRING_NOTE:
-// To wire the final delete button, call this from the Menu delete-account section:
-// phase3DBDeleteAccount({ auth, db, user, clearLocalProfile: async () => {}, afterDeleted: () => {} })
-// Replace auth/db/user names if this App.js uses different variable names.
