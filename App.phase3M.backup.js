@@ -12,131 +12,6 @@ import * as Clipboard from 'expo-clipboard';
 
 
 
-
-// PHASE3M_DATA_STRUCTURE_HELPERS
-const PHASE3M_DIRECT_IMAGE_HELP =
-  'Use a direct image URL when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links and regular webpage links may not display correctly.';
-
-const normalizePhase3MImageUrl = (value) => {
-  if (!value || typeof value !== 'string') return '';
-  const url = value.trim();
-
-  // Basic Google Drive file link conversion attempt.
-  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-  if (driveMatch?.[1]) {
-    return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
-  }
-
-  const openMatch = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
-  if (openMatch?.[1]) {
-    return `https://drive.google.com/uc?export=view&id=${openMatch[1]}`;
-  }
-
-  return url;
-};
-
-const getPhase3MImageUrl = (...values) => {
-  const found = values.find((v) => typeof v === 'string' && v.trim().length > 0);
-  return normalizePhase3MImageUrl(found || '');
-};
-
-const buildPhase3MStadiumRecord = ({
-  name = '',
-  city = '',
-  state = '',
-  country = '',
-  capacity = '',
-  ticketRange = '',
-  imageUrl = '',
-  sourceUrl = ''
-} = {}) => ({
-  name,
-  city,
-  state,
-  country,
-  capacity,
-  ticketRange,
-  imageUrl: normalizePhase3MImageUrl(imageUrl),
-  sourceUrl,
-  updatedAt: new Date().toISOString(),
-});
-
-const buildPhase3MTeamRecord = ({
-  name = '',
-  flag = '',
-  group = '',
-  description = '',
-  homeJerseyUrl = '',
-  awayJerseyUrl = '',
-  coachName = '',
-  coachImageUrl = '',
-  sourceUrl = ''
-} = {}) => ({
-  name,
-  flag,
-  group,
-  description,
-  homeJerseyUrl: normalizePhase3MImageUrl(homeJerseyUrl),
-  awayJerseyUrl: normalizePhase3MImageUrl(awayJerseyUrl),
-  coachName,
-  coachImageUrl: normalizePhase3MImageUrl(coachImageUrl),
-  sourceUrl,
-  updatedAt: new Date().toISOString(),
-});
-
-const buildPhase3MPlayerRecord = ({
-  teamId = '',
-  name = '',
-  jerseyNumber = '',
-  position = '',
-  height = '',
-  weight = '',
-  languages = '',
-  education = '',
-  achievements = '',
-  photoUrl = '',
-  fullBodyImageUrl = '',
-  sourceUrl = ''
-} = {}) => ({
-  teamId,
-  name,
-  jerseyNumber,
-  position,
-  height,
-  weight,
-  languages,
-  education,
-  achievements,
-  photoUrl: normalizePhase3MImageUrl(photoUrl),
-  fullBodyImageUrl: normalizePhase3MImageUrl(fullBodyImageUrl),
-  sourceUrl,
-  updatedAt: new Date().toISOString(),
-});
-
-const PHASE3M_ADMIN_IMAGE_FIELDS = [
-  'stadium.imageUrl',
-  'team.homeJerseyUrl',
-  'team.awayJerseyUrl',
-  'team.coachImageUrl',
-  'player.photoUrl',
-  'player.fullBodyImageUrl'
-];
-
-const PHASE3M_ADMIN_HELP_TEXT =
-  'Image URL manager stores links only. It does not upload files, so there is no Firebase Storage cost.';
-
-
-// PHASE3M_DATA_VALIDATION_NOTES
-const PHASE3M_DATA_VALIDATION_NOTES = [
-  'Stadium image URL should point to a direct image file.',
-  'Coach and player images should only use reliable/permitted sources.',
-  'No image upload is used in this phase.',
-  'If an image fails, show text fallback instead of crashing.',
-  'Final team/player rosters may change before WorldCup 2026.'
-];
-
-
-
 // PHASE3L_REAL_LEADERBOARD_HELPERS
 const PHASE3L_LEADERBOARD_PAGE_SIZE = 25;
 
@@ -231,7 +106,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3M stadium team player structure';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3L real leaderboard foundation';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
@@ -243,7 +118,7 @@ const PHASE3K_ADMIN_VALIDATION_NOTES = [
   'Sponsor controls should save to sponsors/active.',
   'Match controls should save to matches/{matchId}.',
   'News controls should save to news/{newsId}.',
-  'Image URL (direct image link preferred) fields should store links only; no image upload is used.',
+  'Image URL (direct link preferred) fields should store links only; no image upload is used.',
   phase3KDirectImageUrlHelp
 ];
 
@@ -1827,7 +1702,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <TextInput placeholder="Link URL" placeholderTextColor="#94a3b8" value={sponsorForm.linkUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,linkUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Logo URL (direct image link preferred) optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Alternative logo field optional" placeholderTextColor="#94a3b8" value={sponsorForm.logo} onChangeText={(v)=>setSponsorForm({...sponsorForm,logo:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Image URL (direct image link preferred) fallback optional" placeholderTextColor="#94a3b8" value={sponsorForm.imageUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Image URL (direct link preferred) fallback optional" placeholderTextColor="#94a3b8" value={sponsorForm.imageUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <Text style={{ color: muted, marginBottom: 8 }}>Logo tip: use a direct image URL ending in .png, .jpg, .jpeg, or .webp. Google Drive preview links may not display; this version tries to convert common Drive links automatically.</Text>
           <TextInput placeholder="Start date optional, example 2026-06-01" placeholderTextColor="#94a3b8" value={sponsorForm.startDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,startDate:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="End date optional, example 2026-07-31" placeholderTextColor="#94a3b8" value={sponsorForm.endDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,endDate:v})} style={inputStyle} autoCapitalize="none" />
@@ -1870,7 +1745,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL (direct image link preferred) Manager Plus</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL (direct link preferred) Manager Plus</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Add direct image links for stadiums, teams, coaches, players, and jerseys without Firebase Storage. Use one document at a time, for example collection stadiums with doc ID metlife, or collection players with doc ID argentina_messi.</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Direct image URLs are best. Avoid Google Drive preview links unless converted to a direct view URL.</Text>
           <TextInput placeholder="Collection: stadiums, teams, players, coaches" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
