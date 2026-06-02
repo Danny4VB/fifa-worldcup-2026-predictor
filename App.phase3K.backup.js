@@ -10,41 +10,6 @@ import * as Clipboard from 'expo-clipboard';
 
 
 
-
-// PHASE3K_ADMIN_VALIDATION_HELPERS
-const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
-  const yn = (v) => (v ? 'ON' : 'OFF');
-  return [
-    `Ad placements: ${yn(adsConfig.adsEnabled || adsConfig.enabled)}`,
-    `Test ads: ${yn(adsConfig.testAdsEnabled || adsConfig.useTestAds)}`,
-    `Auto-hide no-fill ads: ${yn(adsConfig.autoHideNoFill !== false)}`,
-    `Non-personalized ads: ${yn(adsConfig.nonPersonalizedAds || adsConfig.requestNonPersonalizedAdsOnly)}`,
-    `Sponsor active: ${yn(sponsorConfig.active !== false)}`,
-    `Sponsor logo field: ${sponsorConfig.logoUrl || sponsorConfig.logo || sponsorConfig.imageUrl || sponsorConfig.logoURL ? 'SET' : 'EMPTY'}`
-  ].join('\\n');
-};
-
-const phase3KDirectImageUrlHelp =
-  'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
-
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3K admin Firebase validation';
-
-
-// PHASE3K_ADMIN_VALIDATION_TEXT
-const PHASE3K_ADMIN_VALIDATION_NOTES = [
-  'Admin validation checklist',
-  'Save one setting at a time.',
-  'Reopen Admin Control Panel to confirm the saved value.',
-  'Ad controls should save to appConfig/ads.',
-  'Sponsor controls should save to sponsors/active.',
-  'Match controls should save to matches/{matchId}.',
-  'News controls should save to news/{newsId}.',
-  'Image URL (direct link preferred) fields should store links only; no image upload is used.',
-  phase3KDirectImageUrlHelp
-];
-
-
-
 // PHASE3IA_PERSONALIZED_SHARE_HELPERS
 const APP_SHARE_URL = typeof APP_SHARE_URL !== 'undefined'
   ? APP_SHARE_URL
@@ -1611,7 +1576,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <ToggleButton label="Test ads" active={adForm.useTestAds} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={COLORS.amber} />
           <ToggleButton label="Auto-hide no-fill ads" active={adForm.autoHideOnNoFill} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} />
           <ToggleButton label="Non-personalized request" active={adForm.nonPersonalized} onPress={() => setAdForm({ ...adForm, nonPersonalized: !adForm.nonPersonalized })} color={COLORS.blue} />
-          <ButtonPill label="Save AdMob display settingss" onPress={saveAdSettings} color={COLORS.green} />
+          <ButtonPill label="Save AdMob display settings" onPress={saveAdSettings} color={COLORS.green} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
@@ -1621,9 +1586,9 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <TextInput placeholder="Sponsor message" placeholderTextColor="#94a3b8" value={sponsorForm.message} onChangeText={(v)=>setSponsorForm({...sponsorForm,message:v})} style={inputStyle} />
           <TextInput placeholder="Call to action" placeholderTextColor="#94a3b8" value={sponsorForm.callToAction} onChangeText={(v)=>setSponsorForm({...sponsorForm,callToAction:v})} style={inputStyle} />
           <TextInput placeholder="Link URL" placeholderTextColor="#94a3b8" value={sponsorForm.linkUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,linkUrl:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Logo URL (direct image link preferred) optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Logo URL optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Alternative logo field optional" placeholderTextColor="#94a3b8" value={sponsorForm.logo} onChangeText={(v)=>setSponsorForm({...sponsorForm,logo:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Image URL (direct link preferred) fallback optional" placeholderTextColor="#94a3b8" value={sponsorForm.imageUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Image URL fallback optional" placeholderTextColor="#94a3b8" value={sponsorForm.imageUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <Text style={{ color: muted, marginBottom: 8 }}>Logo tip: use a direct image URL ending in .png, .jpg, .jpeg, or .webp. Google Drive preview links may not display; this version tries to convert common Drive links automatically.</Text>
           <TextInput placeholder="Start date optional, example 2026-06-01" placeholderTextColor="#94a3b8" value={sponsorForm.startDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,startDate:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="End date optional, example 2026-07-31" placeholderTextColor="#94a3b8" value={sponsorForm.endDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,endDate:v})} style={inputStyle} autoCapitalize="none" />
@@ -1666,7 +1631,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL (direct link preferred) Manager Plus</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL Manager Plus</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Add direct image links for stadiums, teams, coaches, players, and jerseys without Firebase Storage. Use one document at a time, for example collection stadiums with doc ID metlife, or collection players with doc ID argentina_messi.</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Direct image URLs are best. Avoid Google Drive preview links unless converted to a direct view URL.</Text>
           <TextInput placeholder="Collection: stadiums, teams, players, coaches" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
