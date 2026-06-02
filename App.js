@@ -710,11 +710,33 @@ function Header({ dark, fg, setDark, setMenu }) {
   );
 }
 
+
+function BouncingBall() {
+  const bounce = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounce, { toValue: -7, duration: 520, useNativeDriver: true }),
+        Animated.timing(bounce, { toValue: 0, duration: 520, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [bounce]);
+
+  return (
+    <Animated.Text style={[styles.bouncingBall, { transform: [{ translateY: bounce }] }]}>⚽</Animated.Text>
+  );
+}
+
 function Matches({ dark, fg, predictions, setSelected, adSettings }) {
   return (
     <ScrollView style={{ padding: 12 }}>
-      <Text style={[styles.big, { color: fg }]}>Matches</Text>
-      <Text style={{ color: fg, marginBottom: 8 }}>All 104 tournament matches are listed. Tap any match to predict before halftime.</Text>
+      <View style={styles.matchesTitleRow}>
+        <Text style={[styles.matchesTitle, { color: fg }]}>Matches</Text>
+        <BouncingBall />
+      </View>
+      <Text style={[styles.matchesHelp, { color: fg }]}>Tap any match to predict before halftime.</Text>
       <AdBox dark={dark} tone={0} placement="matches" adSettings={adSettings} />
       {FIXTURES.map((match, index) => {
         const st = matchStatus(match);
@@ -2006,16 +2028,20 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  header: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backButton: { backgroundColor: COLORS.amber, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
   headerTitle: { flex: 1, fontSize: 16, fontWeight: '900' },
-  logo: { width: 42, height: 42, borderRadius: 21 },
+  logo: { width: 52, height: 52, borderRadius: 26 },
   iconBtn: { paddingHorizontal: 8, paddingVertical: 6 },
   tiny: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  title: { fontSize: 16, fontWeight: '900' },
+  title: { fontSize: 17, fontWeight: '900', lineHeight: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '900', marginBottom: 8 },
-  big: { fontSize: 22, fontWeight: '900', marginBottom: 8 },
+  big: { fontSize: 20, fontWeight: '900', marginBottom: 8 },
+  matchesTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  matchesTitle: { fontSize: 20, fontWeight: '900' },
+  matchesHelp: { marginBottom: 8, fontSize: 13, lineHeight: 18 },
+  bouncingBall: { fontSize: 22 },
   nav: { flexDirection: 'row', gap: 4, padding: 8, borderTopWidth: 1, borderTopColor: '#1e293b' },
   navBtn: { flex: 1, alignItems: 'center', padding: 10, borderRadius: 14 },
   card: { borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1 },
@@ -2037,12 +2063,12 @@ const styles = StyleSheet.create({
   shareBox: { borderWidth: 1, borderColor: '#38bdf8', borderRadius: 14, padding: 10, marginTop: 12, marginBottom: 8, backgroundColor: 'rgba(56,189,248,0.08)' },
   shareHint: { color: '#38bdf8', fontWeight: '800', marginBottom: 4, fontSize: 12 },
   shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
-  sponsor: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 10, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
-  sponsorLogo: { width: 54, height: 54, borderRadius: 12, backgroundColor: '#ffffff' },
-  sponsorLogoFallback: { width: 54, height: 54, borderRadius: 12, borderWidth: 1, borderColor: COLORS.amber, alignItems: 'center', justifyContent: 'center' },
+  sponsor: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
+  sponsorLogo: { width: 74, height: 60, borderRadius: 14, backgroundColor: '#ffffff' },
+  sponsorLogoFallback: { width: 74, height: 60, borderRadius: 14, borderWidth: 1, borderColor: COLORS.amber, alignItems: 'center', justifyContent: 'center' },
   sponsorLabel: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
-  sponsorName: { fontWeight: '900', fontSize: 16 },
-  sponsorText: { fontWeight: '800', fontSize: 13, color: COLORS.amber, width: 720 },
+  sponsorName: { fontWeight: '900', fontSize: 18, lineHeight: 22 },
+  sponsorText: { fontWeight: '800', fontSize: 14, color: COLORS.amber, width: 760, marginTop: 2 },
   adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10, overflow: 'hidden' },
   hiddenAdProbe: { height: 1, opacity: 0, overflow: 'hidden' },
   stepper: { flex: 1, alignItems: 'center', backgroundColor: '#02061788', padding: 10, borderRadius: 14 },
