@@ -1,16 +1,7 @@
 
-// PHASE3PF_MENU_CLEANUP
-// Menu cleanup: remove confusing delete/copy/local-profile buttons from the public menu.
-const PHASE3PF_MENU_RULES = [
-  'Keep Menu simple.',
-  'Keep Privacy Policy, Terms of Use, and Delete Account / Data.',
-  'Remove  from visible menu.',
-  'Remove  from visible menu unless debugging.',
-  'Do not change sign-in/admin logic.'
-];
-\n
 // PHASE3PE_USER_FACING_TEXT_CLEANUP
 // Final user-facing screens should not show developer/testing/internal cost-control notes.
+
 
 // PHASE3PE_FINAL_CLEANUP_NOTES
 const PHASE3PE_FINAL_CLEANUP_NOTES = [
@@ -2236,24 +2227,24 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
         </View>
         <NotificationSettingsCard dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Account</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Legal</Text>
           <Text style={{ color: fg }}>Review how FIFA WorldCup 2026 Predictor handles account data, predictions, ads, leaderboard activity, and deletion requests.</Text>
-          <ButtonPill label="Privacy Policy" onPress={() => openExternalUrl(PRIVACY_POLICY_URL)} color={COLORS.blue} />
-          <ButtonPill label="Terms of Use" onPress={() => openExternalUrl(TERMS_URL)} color={COLORS.amber} />
+          <ButtonPill label="Open Privacy Policy" onPress={() => openExternalUrl(PRIVACY_POLICY_URL)} color={COLORS.blue} />
+          <ButtonPill label="Open Terms of Use" onPress={() => openExternalUrl(TERMS_URL)} color={COLORS.amber} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Delete Account / Data</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Delete Account / Data Request</Text>
           <Text style={{ color: fg, lineHeight: 21 }}>
             You can request deletion of your FIFA WorldCup 2026 Predictor account and related app data. This may include your email, name, nickname, profile details, predictions, votes, champion pick, and leaderboard records connected to your account.
           </Text>
-          <ButtonPill label="Delete Account / Data" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
-          <ButtonPill label="Email deletion request" onPress={() => emailDeleteRequest(safeProfile)} color={COLORS.amber} />
-          <ButtonPill label="
+          <ButtonPill label="Open Delete Account Page" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
+          <ButtonPill label="Email Deletion Request" onPress={() => emailDeleteRequest(safeProfile)} color={COLORS.amber} />
+          <ButtonPill label="Copy Deletion Request Text
 
 Delete My Account Permanently
 This option deletes or anonymizes your app profile, predictions, votes, champion pick, and leaderboard record where allowed. Firebase may ask you to sign in again before the login account can be fully deleted." onPress={() => copyShareMessage(deleteAccountRequestMessage(safeProfile))} color={COLORS.blue} />
-          <ButtonPill label="" onPress={() => saveProfile({})} color="#64748b" />
+          <ButtonPill label="Clear local profile on this phone" onPress={() => saveProfile({})} color="#64748b" />
         </View>
         {admin ? (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
