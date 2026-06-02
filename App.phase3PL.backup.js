@@ -1,38 +1,4 @@
 
-// PHASE3PL_DIRECT_UI_STRUCTURE_CLEANUP
-const PHASE3PL_MENU_SECTIONS = [
-  'Account',
-  'Settings',
-  'Invite Friends',
-  'Privacy & Account',
-  'About This App',
-  'Admin Control Panel'
-];
-
-const PHASE3PL_COMPANY_LINE =
-  'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
-
-const phase3PLFlagFallback = (team = {}) => {
-  const name = String(team.name || team.team || team.teamName || '').toLowerCase();
-  if (name.includes('england')) return '🏴 ENG';
-  if (name.includes('scotland')) return '🏴 SCO';
-  return team.flag || '';
-};
-
-const phase3PLContinentLabel = (team = {}) => {
-  const raw = team.continent || team.confederation || team.region || team.zone || '';
-  const key = String(raw).trim().toUpperCase();
-  const map = {
-    UEFA: 'Europe',
-    CAF: 'Africa',
-    AFC: 'Asia',
-    CONCACAF: 'North America',
-    CONMEBOL: 'South America',
-    OFC: 'Oceania',
-  };
-  return map[key] || raw || '';
-};
-
 // PHASE3PI_GROUPS_SPONSOR_FINAL_CLEANUP
 const PHASE3PI_GROUP_TEAM_DISPLAY_RULE =
   'Final group team rows show only flag, team name, and continent/confederation.';
@@ -55,10 +21,10 @@ const phase3PIContinentFromTeam = (team = {}) => {
 
 // PHASE3PH_MENU_RESTRUCTURE_HEADER_FINAL
 const PHASE3PH_MENU_SECTIONS = [
-  'Account',
+  'Profile',
   'Settings',
   'Invite Friends',
-  'Privacy & Account',
+  'Privacy & Profile',
   'About This App',
   'Admin Control Panel'
 ];
@@ -70,9 +36,9 @@ const PHASE3PH_MENU_RESTRUCTURE_RULES = [
   'Header shows app logo and app name only.',
   'Virtual Beehive Inc. appears in Menu/About, not top header.',
   'Main Menu shows high-level sections only.',
-  'Account details belong inside Account.',
+  'Profile details belong inside Profile.',
   'Notification and mood settings belong inside Settings.',
-  'Privacy, Terms, and Delete Account belong inside Privacy & Account.',
+  'Privacy, Terms, and Delete Profile belong inside Privacy & Profile.',
   'Invite Friends uses one Share button only.'
 ];
 
@@ -80,7 +46,7 @@ const PHASE3PH_MENU_RESTRUCTURE_RULES = [
 // Menu cleanup: remove confusing delete/copy/local-profile buttons from the public menu.
 const PHASE3PF_MENU_RULES = [
   'Keep Menu simple.',
-  'Keep Privacy Policy, Terms of Use, and Delete Account / Data.',
+  'Keep Privacy Policy, Terms of Use, and Delete Profile / Data.',
   'Remove  from visible menu.',
   'Remove  from visible menu unless debugging.',
   'Do not change sign-in/admin logic.'
@@ -289,7 +255,7 @@ const PHASE3N_QA_CHECKLIST = [
   'Groups and knockout bracket show correctly',
   'Leaderboard opens and pagination foundation is ready',
   'News detail opens',
-  'Privacy, Terms, and Delete Account links open',
+  'Privacy, Terms, and Delete Profile links open',
   'Full delete helper opens but is not tested on admin account',
   'Settings appear',
   'Celebration/share win appears when prediction earns points',
@@ -579,10 +545,10 @@ const buildPhase3IAInviteShareText = (profile, user) => {
   return `${avatar} ${name} invited you to join FIFA WorldCup 2026 Predictor.\n\nDownload the app and predict all WorldCup 2026 matches:\n\n${getPhase3IAFooter()}`;
 };
 
-// Phase 3D-B: Full Automatic Account Deletion helper
+// Phase 3D-B: Full Automatic Profile Deletion helper
 // This is intentionally defensive: it anonymizes profile data first, then attempts to delete
 // user-owned records and Firebase Auth. Firebase may require recent login for auth deletion.
-async function phase3DBDeleteAccount({ auth, db, user, clearLocalAccount, afterDeleted }) {
+async function phase3DBDeleteProfile({ auth, db, user, clearLocalProfile, afterDeleted }) {
   if (!user || !user.uid) {
     Alert.alert('Sign in required', 'Please sign in before requesting in-app account deletion.');
     return;
@@ -644,19 +610,19 @@ async function phase3DBDeleteAccount({ auth, db, user, clearLocalAccount, afterD
             try { await deleteDoc(doc(db, 'championPicks', uid)); } catch (e) {}
             try { await deleteDoc(doc(db, 'leaderboard', uid)); } catch (e) {}
 
-            if (clearLocalAccount) {
-              try { await clearLocalAccount(); } catch (e) {}
+            if (clearLocalProfile) {
+              try { await clearLocalProfile(); } catch (e) {}
             }
 
             // Delete Firebase Auth account last. This can fail if login is not recent.
             try {
               await deleteUser(user);
-              Alert.alert('Account deleted', 'Your account deletion request was completed on this device.');
+              Alert.alert('Profile deleted', 'Your account deletion request was completed on this device.');
               if (afterDeleted) afterDeleted();
             } catch (authError) {
               Alert.alert(
                 'Sign in again required',
-                'Your app data was deleted or anonymized where possible, but Firebase requires a recent sign-in before the login account can be fully deleted. Please sign out, sign in again, and tap Delete Account again.'
+                'Your app data was deleted or anonymized where possible, but Firebase requires a recent sign-in before the login account can be fully deleted. Please sign out, sign in again, and tap Delete Profile again.'
               );
             }
           } catch (error) {
@@ -819,20 +785,20 @@ async function openExternalUrl(url) {
   }
 }
 
-function deleteAccountRequestMessage(profile = {}) {
+function deleteProfileRequestMessage(profile = {}) {
   const email = safeText(profile?.email, 'the email used for my app account');
   const nickname = safeText(profile?.nickname || profile?.name, 'my account');
   return `Please delete my FIFA WorldCup 2026 Predictor account and associated app data.
 
-Account email: ${email}
+Profile email: ${email}
 Name or nickname: ${nickname}
 
 I understand this request may delete or anonymize my email, name, nickname, profile details, predictions, champion pick, best-player votes, and leaderboard records connected to my account.`;
 }
 
 async function emailDeleteRequest(profile = {}) {
-  const subject = encodeURIComponent('Delete My FIFA WorldCup 2026 Predictor Account');
-  const body = encodeURIComponent(deleteAccountRequestMessage(profile));
+  const subject = encodeURIComponent('Delete My FIFA WorldCup 2026 Predictor Profile');
+  const body = encodeURIComponent(deleteProfileRequestMessage(profile));
   await openExternalUrl(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
 }
 
@@ -1466,7 +1432,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <ScoreStepper label={activeMatch.teamB} value={b} setValue={setB} disabled={status.locked} />
           </View>
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
-          <ShareRow message={shareMessage} shareLabel="Share" copyLabel="" title="Share" />
+          <ShareRow message={shareMessage} shareLabel="Share this prediction" copyLabel="" title="Share" />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
             <Text style={styles.blackScore}>{activeMatch.teamA} {fakeAverage(activeMatch.id, 1)} - {fakeAverage(activeMatch.id, 2)} {activeMatch.teamB}</Text>
@@ -1814,14 +1780,14 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
   );
 }
 
-function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentAccount }) {
+function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
   const fg = dark ? '#ffffff' : '#0f172a';
-  const [p, setP] = useState({ email: currentAccount?.email || '', password: '', name: currentAccount?.name || '', nickname: currentAccount?.nickname || '', age: currentAccount?.age || '', sex: currentAccount?.sex || '', location: currentAccount?.country || currentAccount?.location || 'Auto-detected country only', avatar: getAvatar(currentAccount) });
+  const [p, setP] = useState({ email: currentProfile?.email || '', password: '', name: currentProfile?.name || '', nickname: currentProfile?.nickname || '', age: currentProfile?.age || '', sex: currentProfile?.sex || '', location: currentProfile?.country || currentProfile?.location || 'Auto-detected country only', avatar: getAvatar(currentProfile) });
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title="Sign in" onBack={onBack} dark={dark} />
       <ScrollView style={{ padding: 16 }}>
-        <Text style={[styles.big, { color: fg }]}>Account</Text>
+        <Text style={[styles.big, { color: fg }]}>Profile</Text>
         <Text style={{ color: fg, marginBottom: 12 }}>Create an account or sign in to save your predictions, profile, and leaderboard progress. You can also continue as a guest.</Text>
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 10 }]}>Email / Password</Text>
         {['email', 'password', 'name', 'nickname', 'age', 'sex'].map((key) => (
@@ -2232,7 +2198,9 @@ function NotificationSettingsCard({ dark, fg }) {
   return (
     <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.amber }]}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Settings</Text>
-      
+      <Text style={{ color: fg, marginBottom: 8 }}>
+        Choose which reminders you want. Push notifications will be connected in a later update; these settings prepare your preferences now.
+      </Text>
       {rows.map(([key, label, help]) => (
         <TouchableOpacity
           key={key}
@@ -2257,18 +2225,18 @@ function NotificationSettingsCard({ dark, fg }) {
   );
 }
 
-function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, firebaseUser, onOpenSignIn, onSignOut, onOpenAdmin }) {
-  const safeAccount = profile && typeof profile === 'object' ? profile : {};
-  const signedIn = !!firebaseUser || !!safeAccount?.email;
-  const profileName = safeText(safeAccount?.name, signedIn ? 'Signed in user' : 'Not signed in');
-  const profileNickname = safeText(safeAccount?.nickname, 'Not set');
-  const profileAge = safeText(safeAccount?.age, 'Not set');
-  const profileSex = safeText(safeAccount?.sex, 'Not set');
-  const profileCountry = safeText(safeAccount?.country || safeAccount?.location, 'Not detected');
-  const profileAvatar = getAvatar(safeAccount);
-  const inviteMessage = appInviteShareMessage(safeAccount);
+function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, firebaseUser, onOpenSignIn, onSignOut, onOpenAdmin }) {
+  const safeProfile = profile && typeof profile === 'object' ? profile : {};
+  const signedIn = !!firebaseUser || !!safeProfile?.email;
+  const profileName = safeText(safeProfile?.name, signedIn ? 'Signed in user' : 'Not signed in');
+  const profileNickname = safeText(safeProfile?.nickname, 'Not set');
+  const profileAge = safeText(safeProfile?.age, 'Not set');
+  const profileSex = safeText(safeProfile?.sex, 'Not set');
+  const profileCountry = safeText(safeProfile?.country || safeProfile?.location, 'Not detected');
+  const profileAvatar = getAvatar(safeProfile);
+  const inviteMessage = appInviteShareMessage(safeProfile);
   const chooseAvatar = async (avatar) => {
-    await saveAccount({ ...safeAccount, avatar, avatarEmoji: avatar });
+    await saveProfile({ ...safeProfile, avatar, avatarEmoji: avatar });
     Alert.alert('Avatar saved', `${avatar} is now your profile avatar.`);
   };
 
@@ -2282,7 +2250,7 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
           <ButtonPill label="Sign out" onPress={onSignOut} color="#64748b" />
         )}
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.big, { color: fg }]}>Account</Text>
+          <Text style={[styles.big, { color: fg }]}>Profile</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <Text style={{ fontSize: 42 }}>{profileAvatar}</Text>
             <View style={{ flex: 1 }}>
@@ -2295,10 +2263,10 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
           <Text style={{ color: fg }}>Age: {profileAge}</Text>
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
-          <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
+          <Text style={{ color: fg }}>Profile status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
           <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>notification preferences</Text>
         </View>
-        <AvatarPicker dark={dark} fg={fg} profile={safeAccount} onPick={chooseAvatar} />
+        <AvatarPicker dark={dark} fg={fg} profile={safeProfile} onPick={chooseAvatar} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
           
@@ -2306,22 +2274,24 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
         </View>
         <NotificationSettingsCard dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Account</Text>
-          
+          <Text style={[styles.sectionTitle, { color: fg }]}>Privacy & Profile</Text>
+          <Text style={{ color: fg }}>Review how FIFA WorldCup 2026 Predictor handles account data, predictions, ads, leaderboard activity, and deletion requests.</Text>
           <ButtonPill label="Privacy Policy" onPress={() => openExternalUrl(PRIVACY_POLICY_URL)} color={COLORS.blue} />
           <ButtonPill label="Terms of Use" onPress={() => openExternalUrl(TERMS_URL)} color={COLORS.amber} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Delete Account / Data</Text>
-          
-          <ButtonPill label="Delete Account / Data" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
-          <ButtonPill label="Email deletion request" onPress={() => emailDeleteRequest(safeAccount)} color={COLORS.amber} />
+          <Text style={[styles.sectionTitle, { color: fg }]}>Delete Profile / Data</Text>
+          <Text style={{ color: fg, lineHeight: 21 }}>
+            You can request deletion of your FIFA WorldCup 2026 Predictor account and related app data. This may include your email, name, nickname, profile details, predictions, votes, champion pick, and leaderboard records connected to your account.
+          </Text>
+          <ButtonPill label="Delete Profile / Data" onPress={() => openExternalUrl(DELETE_ACCOUNT_URL)} color={COLORS.red} />
+          <ButtonPill label="Email deletion request" onPress={() => emailDeleteRequest(safeProfile)} color={COLORS.amber} />
           <ButtonPill label="
 
-Delete My Account Permanently
-" onPress={() => copyShareMessage(deleteAccountRequestMessage(safeAccount))} color={COLORS.blue} />
-          <ButtonPill label="" onPress={() => saveAccount({})} color="#64748b" />
+Delete My Profile Permanently
+" onPress={() => copyShareMessage(deleteProfileRequestMessage(safeProfile))} color={COLORS.blue} />
+          <ButtonPill label="" onPress={() => saveProfile({})} color="#64748b" />
         </View>
         {admin ? (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
@@ -2348,7 +2318,7 @@ export default function App() {
   const [predictions, setPredictions] = useState({});
   const [bestPlayers, setBestPlayers] = useState({});
   const [champion, setChampion] = useState(null);
-  const [profile, setAccount] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '', avatar: '⚽', avatarEmoji: '⚽' });
+  const [profile, setProfile] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '', avatar: '⚽', avatarEmoji: '⚽' });
   const [admin, setAdmin] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [sponsor, setSponsor] = useState(null);
@@ -2367,7 +2337,7 @@ export default function App() {
       if (bp) setBestPlayers(JSON.parse(bp));
       if (pr) {
         const parsed = JSON.parse(pr);
-        setAccount(parsed);
+        setProfile(parsed);
         setAdmin(parsed.isAdmin === true);
       }
     }
@@ -2382,7 +2352,7 @@ export default function App() {
         const data = await readDoc('users', user.uid);
         if (data) {
           const merged = { ...data, email: user.email || data.email || '' };
-          setAccount(merged);
+          setProfile(merged);
           setAdmin(data.isAdmin === true);
           await AsyncStorage.setItem('profile', JSON.stringify(merged));
         }
@@ -2472,9 +2442,9 @@ export default function App() {
     ]);
   }
 
-  async function saveAccount(p) {
+  async function saveProfile(p) {
     const clean = { ...p, country: p.country || p.location || 'United States' };
-    setAccount(clean);
+    setProfile(clean);
     await AsyncStorage.setItem('profile', JSON.stringify(clean));
     if (firebaseUser) {
       const profileDoc = {
@@ -2493,9 +2463,9 @@ export default function App() {
       await writeDoc('users', firebaseUser.uid, profileDoc);
       const latest = await readDoc('users', firebaseUser.uid);
       if (latest?.isAdmin === true) setAdmin(true);
-      Alert.alert('Account saved online', 'Your profile was saved online.');
+      Alert.alert('Profile saved online', 'Your profile was saved online.');
     } else {
-      Alert.alert('Account saved locally', 'Sign in to save this profile online.');
+      Alert.alert('Profile saved locally', 'Sign in to save this profile online.');
     }
   }
 
@@ -2553,13 +2523,13 @@ export default function App() {
         avatarEmoji: getAvatar(latest || p),
       };
 
-      setAccount(merged);
+      setProfile(merged);
       setAdmin(merged?.isAdmin === true);
       await AsyncStorage.setItem('profile', JSON.stringify(merged));
 
       Alert.alert(
-        mode === 'signup' ? 'Account created' : 'Signed in',
-        merged?.isAdmin ? 'Admin access enabled.' : 'Account is connected.'
+        mode === 'signup' ? 'Profile created' : 'Signed in',
+        merged?.isAdmin ? 'Admin access enabled.' : 'Profile is connected.'
       );
       return true;
     } catch (e) {
@@ -2573,7 +2543,7 @@ export default function App() {
     try { await signOut(auth); } catch (e) { console.log(e?.message || e); }
     setFirebaseUser(null);
     setAdmin(false);
-    setAccount({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '' });
+    setProfile({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '' });
     await AsyncStorage.removeItem('profile');
     Alert.alert('Signed out', 'You are now signed out.');
   }
@@ -2615,7 +2585,7 @@ export default function App() {
           dark={dark}
           fg={fg}
           profile={profile || {}}
-          saveAccount={saveAccount}
+          saveProfile={saveProfile}
           admin={admin}
           firebaseUser={firebaseUser}
           onOpenSignIn={() => {
@@ -2640,7 +2610,7 @@ export default function App() {
       <Modal visible={authOpen} animationType="slide" onRequestClose={() => setAuthOpen(false)}>
         <SignInScreen
           dark={dark}
-          currentAccount={profile || {}}
+          currentProfile={profile || {}}
           onEmailAuth={async (p, mode) => {
             const ok = await handleEmailAuth(p, mode);
             if (ok) {
@@ -2650,7 +2620,7 @@ export default function App() {
           }}
           onBack={() => setAuthOpen(false)}
           onSave={async (p) => {
-            await saveAccount(p);
+            await saveProfile(p);
             setAuthOpen(false);
           }}
         />
@@ -2661,11 +2631,11 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { minHeight: 126, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  header: { minHeight: 118, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backButton: { backgroundColor: COLORS.amber, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
-  headerTitle: { flex: 1, fontSize: 27, fontWeight: '900' },
-  logo: { width: 74, height: 74, borderRadius: 26 },
+  headerTitle: { flex: 1, fontSize: 26, fontWeight: '900' },
+  logo: { width: 56, height: 56, borderRadius: 26 },
   iconBtn: { paddingHorizontal: 8, paddingVertical: 6 },
   tiny: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   title: { fontSize: 17, fontWeight: '900', lineHeight: 20 },
@@ -2777,5 +2747,5 @@ const styles = StyleSheet.create({
 
 // PHASE_3DB_WIRING_NOTE:
 // To wire the final delete button, call this from the Menu delete-account section:
-// phase3DBDeleteAccount({ auth, db, user, clearLocalAccount: async () => {}, afterDeleted: () => {} })
+// phase3DBDeleteProfile({ auth, db, user, clearLocalProfile: async () => {}, afterDeleted: () => {} })
 // Replace auth/db/user names if this App.js uses different variable names.
