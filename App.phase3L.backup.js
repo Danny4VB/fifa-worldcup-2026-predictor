@@ -11,85 +11,6 @@ import * as Clipboard from 'expo-clipboard';
 
 
 
-
-// PHASE3L_REAL_LEADERBOARD_HELPERS
-const PHASE3L_LEADERBOARD_PAGE_SIZE = 25;
-
-const PHASE3L_SCORE_RULES = {
-  exactScore: 50,
-  correctDraw: 15,
-  correctWinner: 10,
-};
-
-const calculatePhase3LPredictionPoints = (prediction, match) => {
-  if (!prediction || !match) return 0;
-
-  const status = String(match.status || '').toLowerCase();
-  if (status !== 'final' && status !== 'finished') return 0;
-
-  const predA = Number(prediction.teamAScore ?? prediction.homeScore ?? prediction.scoreA);
-  const predB = Number(prediction.teamBScore ?? prediction.awayScore ?? prediction.scoreB);
-  const actualA = Number(match.teamAScore ?? match.homeScore ?? match.scoreA);
-  const actualB = Number(match.teamBScore ?? match.awayScore ?? match.scoreB);
-
-  if ([predA, predB, actualA, actualB].some((n) => Number.isNaN(n))) return 0;
-
-  if (predA === actualA && predB === actualB) {
-    return PHASE3L_SCORE_RULES.exactScore;
-  }
-
-  const predDiff = predA - predB;
-  const actualDiff = actualA - actualB;
-
-  if (predDiff === 0 && actualDiff === 0) {
-    return PHASE3L_SCORE_RULES.correctDraw;
-  }
-
-  if ((predDiff > 0 && actualDiff > 0) || (predDiff < 0 && actualDiff < 0)) {
-    return PHASE3L_SCORE_RULES.correctWinner;
-  }
-
-  return 0;
-};
-
-const getPhase3LScoreType = (prediction, match) => {
-  if (!prediction || !match) return 'none';
-
-  const predA = Number(prediction.teamAScore ?? prediction.homeScore ?? prediction.scoreA);
-  const predB = Number(prediction.teamBScore ?? prediction.awayScore ?? prediction.scoreB);
-  const actualA = Number(match.teamAScore ?? match.homeScore ?? match.scoreA);
-  const actualB = Number(match.teamBScore ?? match.awayScore ?? match.scoreB);
-
-  if ([predA, predB, actualA, actualB].some((n) => Number.isNaN(n))) return 'none';
-
-  if (predA === actualA && predB === actualB) return 'exactScore';
-
-  const predDiff = predA - predB;
-  const actualDiff = actualA - actualB;
-
-  if (predDiff === 0 && actualDiff === 0) return 'correctDraw';
-  if ((predDiff > 0 && actualDiff > 0) || (predDiff < 0 && actualDiff < 0)) return 'correctWinner';
-
-  return 'none';
-};
-
-const buildPhase3LLeaderboardRecord = ({ userId, profile = {}, totals = {} }) => ({
-  userId,
-  nickname: profile.nickname || profile.name || 'WorldCup fan',
-  avatar: profile.avatar || profile.avatarEmoji || profile.selectedAvatar || '⚽',
-  country: profile.country || '',
-  points: Number(totals.points || 0),
-  exactScores: Number(totals.exactScores || 0),
-  correctWinners: Number(totals.correctWinners || 0),
-  correctDraws: Number(totals.correctDraws || 0),
-  matchesScored: Number(totals.matchesScored || 0),
-  updatedAt: new Date().toISOString(),
-});
-
-const PHASE3L_LEADERBOARD_HELP_TEXT =
-  'Leaderboard loads top 25 first to control Firebase reads. Use Load more predictors for additional predictors.';
-
-
 // PHASE3K_ADMIN_VALIDATION_HELPERS
 const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
   const yn = (v) => (v ? 'ON' : 'OFF');
@@ -106,7 +27,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3L real leaderboard foundation';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3K admin Firebase validation';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
