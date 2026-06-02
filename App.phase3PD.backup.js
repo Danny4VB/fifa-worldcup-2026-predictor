@@ -1,83 +1,4 @@
 
-// PHASE3PD_FULL_KNOCKOUT_BRACKET
-const PHASE3PD_BRACKET_ROUNDS = [
-  'Round of 32',
-  'Round of 16',
-  'Quarter-finals',
-  'Semi-finals',
-  'Final'
-];
-
-const PHASE3PD_BRACKET_NOTE =
-  'Bracket should scroll horizontally in portrait mode and advance winners from Firebase/admin match results.';
-
-const getPhase3PDMatchWinner = (match = {}) => {
-  const status = String(match.status || '').toLowerCase();
-  if (status !== 'final' && status !== 'finished') return '';
-
-  const a = Number(match.teamAScore ?? match.homeScore ?? match.scoreA);
-  const b = Number(match.teamBScore ?? match.awayScore ?? match.scoreB);
-  if (Number.isNaN(a) || Number.isNaN(b) || a === b) return '';
-
-  return a > b
-    ? (match.teamA || match.homeTeam || match.teamAName || 'Winner A')
-    : (match.teamB || match.awayTeam || match.teamBName || 'Winner B');
-};
-
-const buildPhase3PDBracketSlot = ({ id, label, teamA, teamB, winner, matchId, source = 'manual/admin' } = {}) => ({
-  id,
-  label,
-  teamA: teamA || 'TBD',
-  teamB: teamB || 'TBD',
-  winner: winner || '',
-  matchId: matchId || '',
-  source,
-});
-
-const buildPhase3PDBracketFoundation = (matches = []) => {
-  const roundOf32 = matches
-    .filter((m) => String(m.round || m.stage || '').toLowerCase().includes('32') || Number(m.matchNumber || m.id || 0) >= 73)
-    .slice(0, 16)
-    .map((m, index) =>
-      buildPhase3PDBracketSlot({
-        id: `r32-${index + 1}`,
-        label: m.label || `M${m.matchNumber || index + 73}`,
-        teamA: m.teamA || m.homeTeam || m.teamAName,
-        teamB: m.teamB || m.awayTeam || m.teamBName,
-        winner: getPhase3PDMatchWinner(m),
-        matchId: m.id || m.matchId || String(m.matchNumber || ''),
-      })
-    );
-
-  return {
-    roundOf32,
-    roundOf16: Array.from({ length: 8 }, (_, i) => buildPhase3PDBracketSlot({ id: `r16-${i + 1}`, label: `Winner R32-${i * 2 + 1} vs Winner R32-${i * 2 + 2}` })),
-    quarterFinals: Array.from({ length: 4 }, (_, i) => buildPhase3PDBracketSlot({ id: `qf-${i + 1}`, label: `Winner R16-${i * 2 + 1} vs Winner R16-${i * 2 + 2}` })),
-    semiFinals: Array.from({ length: 2 }, (_, i) => buildPhase3PDBracketSlot({ id: `sf-${i + 1}`, label: `Winner QF-${i * 2 + 1} vs Winner QF-${i * 2 + 2}` })),
-    final: [buildPhase3PDBracketSlot({ id: 'final', label: 'Winner SF Left vs Winner SF Right' })],
-  };
-};
-
-const PHASE3PD_BRACKET_DISPLAY_RULES = [
-  'Use a dedicated bracket section/screen.',
-  'Keep phone portrait mode.',
-  'Bracket area can scroll horizontally.',
-  'Round labels: Round of 32, Round of 16, Quarter-finals, Semi-finals, Final.',
-  'Advance winners from admin/Firebase match results first.',
-  'Live-score API can be added later after cost review.'
-];
-
-
-// PHASE3PD_BRACKET_STYLE_HINTS
-const PHASE3PD_BRACKET_STYLE_HINTS = {
-  bracketMinWidth: 1400,
-  bracketCardWidth: 150,
-  bracketCardHeight: 58,
-  bracketRoundGap: 24,
-  bracketCardGap: 10,
-};
-
-\n
 // PHASE3PC_GROUPS_TEAM_CLEANUP
 const PHASE3PC_CONFEDERATION_LABELS = {
   UEFA: 'Europe',
@@ -190,7 +111,7 @@ const PHASE3O_IOS_LINK_TODO = 'Add Apple App Store link after iOS app is built a
 
 
 // PHASE3N_RELEASE_QA_DIAGNOSTICS
-const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-D full knockout bracket foundation';
+const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-C groups team card cleanup';
 
 const PHASE3N_QA_CHECKLIST = [
   'App opens without crash',
@@ -444,7 +365,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-D full knockout bracket foundation';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-C groups team card cleanup';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
