@@ -8,7 +8,6 @@ const PHASE3PF_MENU_RULES = [
   'Remove  from visible menu unless debugging.',
   'Do not change sign-in/admin logic.'
 ];
-\n
 // PHASE3PE_USER_FACING_TEXT_CLEANUP
 // Final user-facing screens should not show developer/testing/internal cost-control notes.
 
@@ -19,7 +18,6 @@ const PHASE3PE_FINAL_CLEANUP_NOTES = [
   'Final Top tab should look like a public leaderboard, not a developer diagnostic screen.'
 ];
 
-\n
 // PHASE3PD_FULL_KNOCKOUT_BRACKET
 const PHASE3PD_BRACKET_ROUNDS = [
   'Round of 32',
@@ -97,7 +95,6 @@ const PHASE3PD_BRACKET_STYLE_HINTS = {
   bracketCardGap: 10,
 };
 
-\n
 // PHASE3PC_GROUPS_TEAM_CLEANUP
 const PHASE3PC_CONFEDERATION_LABELS = {
   UEFA: 'Europe',
@@ -136,7 +133,6 @@ const PHASE3PC_BRACKET_NEXT_STEP_NOTES = [
   'Round of 32/16/quarter/semi/final should be generated from match results/admin data later.'
 ];
 
-\n
 // PHASE3PB_FINAL_SHARE_TEXT
 const PHASE3PB_SHARE_LINK = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
 const PHASE3PB_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
@@ -170,7 +166,6 @@ const buildPhase3PBChampionChallengeText = ({ profile, user, champion = 'their c
   const name = getPhase3PBShareName(profile, user);
   return `${avatar} ${name} predicted ${champion} will win WorldCup 2026.\n\nDo you agree, or do you think another team will win?\n\nDownload the app and predict all WorldCup 2026 matches:\n${PHASE3PB_SHARE_LINK}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
 };
-\n
 // PHASE3PA_HEADER_LAYOUT_POLISH
 // Header visual polish only: taller header, larger app logo, more breathing room under phone status bar.
 
