@@ -14,17 +14,8 @@ import * as Clipboard from 'expo-clipboard';
 
 
 
-
-// PHASE3O_PRODUCTION_UPDATE_PREP
-const PHASE3O_VERSION_NAME = '1.0.1';
-const PHASE3O_RELEASE_NOTES =
-  'Improved match predictions, groups/bracket, sharing, sponsor controls, avatars, account tools, and leaderboard foundations.';
-const PHASE3O_GOOGLE_PLAY_LINK = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
-const PHASE3O_IOS_LINK_TODO = 'Add Apple App Store link after iOS app is built and published.';
-
-
 // PHASE3N_RELEASE_QA_DIAGNOSTICS
-const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3O production update prep';
+const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3N release QA diagnostics';
 
 const PHASE3N_QA_CHECKLIST = [
   'App opens without crash',
@@ -278,7 +269,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3O production update prep';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3N release QA diagnostics';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT

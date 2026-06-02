@@ -2,7 +2,7 @@
   "expo": {
     "name": "FIFA WorldCup 2026 Predictor",
     "slug": "fifa-worldcup-2026-predictor",
-    "version": "2.2.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/app-logo.png",
     "userInterfaceStyle": "automatic",
