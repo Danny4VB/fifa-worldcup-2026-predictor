@@ -177,7 +177,7 @@ const PHASE3PA_HEADER_NOTES = [
   'Mood and menu icons should stay aligned.'
 ];
 
-\nimport React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, BackHandler, Image, Linking, Modal, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
