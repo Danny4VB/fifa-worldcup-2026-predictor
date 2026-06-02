@@ -13,44 +13,6 @@ import * as Clipboard from 'expo-clipboard';
 
 
 
-
-// PHASE3N_RELEASE_QA_DIAGNOSTICS
-const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3N release QA diagnostics';
-
-const PHASE3N_QA_CHECKLIST = [
-  'App opens without crash',
-  'Menu opens without crash',
-  'Sign-in wording is clean',
-  'Admin panel opens for authorized admin',
-  'Sponsor bar is readable and logo fallback works',
-  'Ad controls save and apply from Firebase',
-  'Share messages use the Google Play link',
-  'Personalized share text includes avatar and nickname',
-  'Avatar picker appears and saves',
-  'Matches filters work',
-  'Smart scroll / smart match order works',
-  'Groups and knockout bracket show correctly',
-  'Leaderboard opens and pagination foundation is ready',
-  'News detail opens',
-  'Privacy, Terms, and Delete Account links open',
-  'Full delete helper opens but is not tested on admin account',
-  'Notification preferences appear',
-  'Celebration/share win appears when prediction earns points',
-  'No Google AdMob placeholder visible when ads are off',
-];
-
-const PHASE3N_RELEASE_NOTES_DRAFT =
-  'Updated FIFA WorldCup 2026 Predictor with improved match browsing, groups and knockout bracket, admin sponsor controls, personalized sharing, avatar selection, account deletion support, and leaderboard/scoring foundations.';
-
-const PHASE3N_GOOGLE_PLAY_LINK =
-  'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
-
-const PHASE3N_IOS_LINK_TODO =
-  'TODO: Add Apple App Store link after iOS app is built and published.';
-
-const getPhase3NQaSummary = () => PHASE3N_QA_CHECKLIST.map((item, index) => `${index + 1}. ${item}`).join('\\n');
-
-
 // PHASE3M_DATA_STRUCTURE_HELPERS
 const PHASE3M_DIRECT_IMAGE_HELP =
   'Use a direct image URL when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links and regular webpage links may not display correctly.';
@@ -269,7 +231,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3N release QA diagnostics';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3M stadium team player structure';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
