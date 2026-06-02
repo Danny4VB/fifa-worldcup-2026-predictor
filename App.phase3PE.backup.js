@@ -1,16 +1,4 @@
 
-// PHASE3PE_USER_FACING_TEXT_CLEANUP
-// Final user-facing screens should not show developer/testing/internal cost-control notes.
-
-
-// PHASE3PE_FINAL_CLEANUP_NOTES
-const PHASE3PE_FINAL_CLEANUP_NOTES = [
-  'Remove developer/test-only notes from user-facing screens.',
-  'Keep technical Firebase/cost-control notes in README/admin documentation only.',
-  'Final Top tab should look like a public leaderboard, not a developer diagnostic screen.'
-];
-
-\n
 // PHASE3PD_FULL_KNOCKOUT_BRACKET
 const PHASE3PD_BRACKET_ROUNDS = [
   'Round of 32',
@@ -79,6 +67,7 @@ const PHASE3PD_BRACKET_DISPLAY_RULES = [
   'Live-score API can be added later after cost review.'
 ];
 
+
 // PHASE3PD_BRACKET_STYLE_HINTS
 const PHASE3PD_BRACKET_STYLE_HINTS = {
   bracketMinWidth: 1400,
@@ -118,6 +107,7 @@ const buildPhase3PCGroupTeamLine = (team = {}) => ({
 
 const PHASE3PC_GROUPS_DISPLAY_RULE =
   'Groups tab team cards should show only flag, team name, and continent/confederation.';
+
 
 // PHASE3PC_BRACKET_NEXT_STEP_NOTES
 const PHASE3PC_BRACKET_NEXT_STEP_NOTES = [
@@ -165,6 +155,7 @@ const buildPhase3PBChampionChallengeText = ({ profile, user, champion = 'their c
 // PHASE3PA_HEADER_LAYOUT_POLISH
 // Header visual polish only: taller header, larger app logo, more breathing room under phone status bar.
 
+
 // PHASE3PA_HEADER_NOTES
 const PHASE3PA_HEADER_NOTES = [
   'Header should feel taller and less crowded.',
@@ -183,6 +174,13 @@ import { getFirestore, doc, getDoc, setDoc, serverTimestamp, deleteDoc, collecti
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import * as Clipboard from 'expo-clipboard';
 
+
+
+
+
+
+
+
 // PHASE3O_PRODUCTION_UPDATE_PREP
 const PHASE3O_VERSION_NAME = '1.0.1';
 const PHASE3O_RELEASE_NOTES =
@@ -190,8 +188,9 @@ const PHASE3O_RELEASE_NOTES =
 const PHASE3O_GOOGLE_PLAY_LINK = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
 const PHASE3O_IOS_LINK_TODO = 'Add Apple App Store link after iOS app is built and published.';
 
+
 // PHASE3N_RELEASE_QA_DIAGNOSTICS
-const PHASE3N_APP_BUILD_LABEL = 'nockout bracket foundation';
+const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-D full knockout bracket foundation';
 
 const PHASE3N_QA_CHECKLIST = [
   'App opens without crash',
@@ -226,9 +225,10 @@ const PHASE3N_IOS_LINK_TODO =
 
 const getPhase3NQaSummary = () => PHASE3N_QA_CHECKLIST.map((item, index) => `${index + 1}. ${item}`).join('\\n');
 
+
 // PHASE3M_DATA_STRUCTURE_HELPERS
 const PHASE3M_DIRECT_IMAGE_HELP =
-  '';
+  'Use a direct image URL when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links and regular webpage links may not display correctly.';
 
 const normalizePhase3MImageUrl = (value) => {
   if (!value || typeof value !== 'string') return '';
@@ -336,7 +336,8 @@ const PHASE3M_ADMIN_IMAGE_FIELDS = [
 ];
 
 const PHASE3M_ADMIN_HELP_TEXT =
-  '';
+  'Image URL manager stores links only. It does not upload files, so there is no Firebase Storage cost.';
+
 
 // PHASE3M_DATA_VALIDATION_NOTES
 const PHASE3M_DATA_VALIDATION_NOTES = [
@@ -344,8 +345,10 @@ const PHASE3M_DATA_VALIDATION_NOTES = [
   'Coach and player images should only use reliable/permitted sources.',
   'No image upload is used in this phase.',
   'If an image fails, show text fallback instead of crashing.',
-  ''
+  'Final team/player rosters may change before WorldCup 2026.'
 ];
+
+
 
 // PHASE3L_REAL_LEADERBOARD_HELPERS
 const PHASE3L_LEADERBOARD_PAGE_SIZE = 25;
@@ -422,16 +425,17 @@ const buildPhase3LLeaderboardRecord = ({ userId, profile = {}, totals = {} }) =>
 });
 
 const PHASE3L_LEADERBOARD_HELP_TEXT =
-  'Leaderboard loads top 25 first to control Firebase reads. Use Load more for additional predictors.';
+  'Leaderboard loads top 25 first to control Firebase reads. Use Load more predictors for additional predictors.';
+
 
 // PHASE3K_ADMIN_VALIDATION_HELPERS
 const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
   const yn = (v) => (v ? 'ON' : 'OFF');
   return [
-    `Ads: ${yn(adsConfig.adsEnabled || adsConfig.enabled)}`,
+    `Ad placements: ${yn(adsConfig.adsEnabled || adsConfig.enabled)}`,
     `Test ads: ${yn(adsConfig.testAdsEnabled || adsConfig.useTestAds)}`,
-    `Auto-hide empty ads: ${yn(adsConfig.autoHideNoFill !== false)}`,
-    `Privacy-friendly ads: ${yn(adsConfig.nonPersonalizedAds || adsConfig.requestNonPersonalizedAdsOnly)}`,
+    `Auto-hide no-fill ads: ${yn(adsConfig.autoHideNoFill !== false)}`,
+    `Non-personalized ads: ${yn(adsConfig.nonPersonalizedAds || adsConfig.requestNonPersonalizedAdsOnly)}`,
     `Sponsor active: ${yn(sponsorConfig.active !== false)}`,
     `Sponsor logo field: ${sponsorConfig.logoUrl || sponsorConfig.logo || sponsorConfig.imageUrl || sponsorConfig.logoURL ? 'SET' : 'EMPTY'}`
   ].join('\\n');
@@ -440,20 +444,23 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'nockout bracket foundation';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-D full knockout bracket foundation';
+
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
 const PHASE3K_ADMIN_VALIDATION_NOTES = [
-  '',
-  '',
-  '',
-  '',
-  '',
-  '',
-  '',
-  'Image URL fields should store links only; no image upload is used.',
+  'Admin validation checklist',
+  'Save one setting at a time.',
+  'Reopen Admin Control Panel to confirm the saved value.',
+  'Ad controls should save to appConfig/ads.',
+  'Sponsor controls should save to sponsors/active.',
+  'Match controls should save to matches/{matchId}.',
+  'News controls should save to news/{newsId}.',
+  'Image URL (direct image link preferred) fields should store links only; no image upload is used.',
   phase3KDirectImageUrlHelp
 ];
+
+
 
 // PHASE3IA_PERSONALIZED_SHARE_HELPERS
 
@@ -497,6 +504,7 @@ const buildPhase3IAInviteShareText = (profile, user) => {
   const name = getPhase3IAShareName(profile, user);
   return `${avatar} ${name} invited you to join FIFA WorldCup 2026 Predictor.\n\nDownload the app and predict all WorldCup 2026 matches:\n\n${getPhase3IAFooter()}`;
 };
+
 
 // Phase 3D-B: Full Automatic Account Deletion helper
 // This is intentionally defensive: it anonymizes profile data first, then attempts to delete
@@ -622,7 +630,7 @@ class ScreenErrorBoundary extends React.Component {
             <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.red }]}>
               <Text style={[styles.sectionTitle, { color: fg }]}>Temporary screen issue</Text>
               <Text style={{ color: fg }}>This screen was protected from crashing the app.</Text>
-              <Text style={{ color: fg, marginTop: 8 }}>notification preferences</Text>
+              <Text style={{ color: fg, marginTop: 8 }}>Build: Phase 3G notification preferences</Text>
             </View>
           </View>
         </SafeAreaView>
@@ -631,6 +639,7 @@ class ScreenErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
 
 const ADMOB_ANDROID_APP_ID = 'ca-app-pub-7388735966130444~1056081892';
 const ADMOB_AD_UNITS = {
@@ -692,6 +701,7 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
   return ADMOB_AD_UNITS[placement] || ADMOB_AD_UNITS.matches;
 }
 
+
 const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
 const APP_SHARE_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
 const APP_BRAND_LINE = 'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
@@ -700,6 +710,7 @@ const PRIVACY_POLICY_URL = 'https://play.google.com/store/apps/details?id=com.vi
 const TERMS_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-terms';
 const DELETE_ACCOUNT_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-delete-account';
 const SUPPORT_EMAIL = 'danny@virtualbeehiveinc.com';
+
 
 // PHASE3G_NOTIFICATION_PREFS
 // Lightweight notification preference center. This does not send push notifications yet.
@@ -754,6 +765,7 @@ async function emailDeleteRequest(profile = {}) {
   const body = encodeURIComponent(deleteAccountRequestMessage(profile));
   await openExternalUrl(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
 }
+
 
 function brandedShareFooter() {
   return `Download the app and predict all WorldCup 2026 matches:
@@ -1055,6 +1067,8 @@ function fakeAverage(matchId, side) {
   return Math.round((matchId * side + side * 2) % 5);
 }
 
+
+
 function matchWithOverride(match, data = null) {
   if (!data) return match;
   const a = data.teamAScore ?? data.scoreA ?? data.homeScore ?? match.liveScore?.[0] ?? 0;
@@ -1153,6 +1167,7 @@ function BackHeader({ title, onBack, dark }) {
     </View>
   );
 }
+
 
 function normalizeImageUrl(url = '') {
   const raw = String(url || '').trim();
@@ -1266,6 +1281,7 @@ function Header({ dark, fg, setDark, setMenu }) {
     </View>
   );
 }
+
 
 function BouncingBall() {
   const bounce = useRef(new Animated.Value(0)).current;
@@ -1700,7 +1716,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
   return (
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
-      
+      <Text style={{ color: fg }}>Cost-controlled leaderboard view. The app loads a limited page first, then users can load more.</Text>
       <ShareCopyRow message={leaderboardShareMessage(profile)} shareLabel="Share" copyLabel="Copy challenge text" title="Share leaderboard" />
       <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: COLORS.amber }]}>
         <Text style={{ fontSize: 34 }}>{getAvatar(profile)}</Text>
@@ -1755,6 +1771,7 @@ function SignInScreen({ dark, onBack, onSave, onEmailAuth, currentProfile }) {
     </SafeAreaView>
   );
 }
+
 
 function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, onSponsorSaved }) {
   const fg = dark ? '#ffffff' : '#0f172a';
@@ -1974,7 +1991,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
     await writeDoc('appConfig', 'ads', payload);
     if (onAdSettingsSaved) onAdSettingsSaved(payload);
     await logAdminAction('save_ad_settings', 'appConfig/ads', payload);
-    Alert.alert('Ad settings saved', 'Ads were saved and applied on this device. Other users will receive the setting from Firebase.');
+    Alert.alert('Ad settings saved', 'Ad placements were saved and applied on this device. Other users will receive the setting from Firebase.');
   }
 
   const StatusButton = ({ value, label }) => (
@@ -2004,11 +2021,11 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <Text style={[styles.sectionTitle, { color: fg }]}>AdMob Display Control</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Controls Google ad placements without rebuilding. These switches now save to Firebase and apply immediately on this device after Save.</Text>
           <Text style={{ color: fg, fontWeight: '900', marginBottom: 8 }}>Current draft: Ads {adForm.adsEnabled ? 'ON' : 'OFF'} • Test ads {adForm.useTestAds ? 'ON' : 'OFF'} • Auto-hide {adForm.autoHideOnNoFill ? 'ON' : 'OFF'} • Non-personalized {adForm.nonPersonalized ? 'ON' : 'OFF'}</Text>
-          <ToggleButton label="Ads" active={adForm.adsEnabled} onPress={() => setAdForm({ ...adForm, adsEnabled: !adForm.adsEnabled })} />
+          <ToggleButton label="Ad placements" active={adForm.adsEnabled} onPress={() => setAdForm({ ...adForm, adsEnabled: !adForm.adsEnabled })} />
           <ToggleButton label="Test ads" active={adForm.useTestAds} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={COLORS.amber} />
-          <ToggleButton label="Auto-hide empty ads" active={adForm.autoHideOnNoFill} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} />
+          <ToggleButton label="Auto-hide no-fill ads" active={adForm.autoHideOnNoFill} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} />
           <ToggleButton label="Non-personalized request" active={adForm.nonPersonalized} onPress={() => setAdForm({ ...adForm, nonPersonalized: !adForm.nonPersonalized })} color={COLORS.blue} />
-          <ButtonPill label="Save ad settingss" onPress={saveAdSettings} color={COLORS.green} />
+          <ButtonPill label="Save AdMob display settingss" onPress={saveAdSettings} color={COLORS.green} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
@@ -2018,9 +2035,9 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <TextInput placeholder="Sponsor message" placeholderTextColor="#94a3b8" value={sponsorForm.message} onChangeText={(v)=>setSponsorForm({...sponsorForm,message:v})} style={inputStyle} />
           <TextInput placeholder="Call to action" placeholderTextColor="#94a3b8" value={sponsorForm.callToAction} onChangeText={(v)=>setSponsorForm({...sponsorForm,callToAction:v})} style={inputStyle} />
           <TextInput placeholder="Link URL" placeholderTextColor="#94a3b8" value={sponsorForm.linkUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,linkUrl:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Logo URL optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Logo URL (direct image link preferred) optional" placeholderTextColor="#94a3b8" value={sponsorForm.logoUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,logoUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Alternative logo field optional" placeholderTextColor="#94a3b8" value={sponsorForm.logo} onChangeText={(v)=>setSponsorForm({...sponsorForm,logo:v})} style={inputStyle} autoCapitalize="none" />
-          <TextInput placeholder="Image URL fallback optional" placeholderTextColor="#94a3b8" value={sponsorForm.imageUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Image URL (direct image link preferred) fallback optional" placeholderTextColor="#94a3b8" value={sponsorForm.imageUrl} onChangeText={(v)=>setSponsorForm({...sponsorForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <Text style={{ color: muted, marginBottom: 8 }}>Logo tip: use a direct image URL ending in .png, .jpg, .jpeg, or .webp. Google Drive preview links may not display; this version tries to convert common Drive links automatically.</Text>
           <TextInput placeholder="Start date optional, example 2026-06-01" placeholderTextColor="#94a3b8" value={sponsorForm.startDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,startDate:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="End date optional, example 2026-07-31" placeholderTextColor="#94a3b8" value={sponsorForm.endDate} onChangeText={(v)=>setSponsorForm({...sponsorForm,endDate:v})} style={inputStyle} autoCapitalize="none" />
@@ -2063,7 +2080,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight] }>
-          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL Manager Plus</Text>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Image URL (direct image link preferred) Manager Plus</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Add direct image links for stadiums, teams, coaches, players, and jerseys without Firebase Storage. Use one document at a time, for example collection stadiums with doc ID metlife, or collection players with doc ID argentina_messi.</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Direct image URLs are best. Avoid Google Drive preview links unless converted to a direct view URL.</Text>
           <TextInput placeholder="Collection: stadiums, teams, players, coaches" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
@@ -2079,7 +2096,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-          
+          <Text style={[styles.sectionTitle, { color: fg }]}>Firebase Cost Control</Text>
           <Text style={{ color: muted }}>Phase 2G keeps app-config and sponsor reads cached on the device, limits leaderboard loading, and avoids reading large prediction collections from the client.</Text>
           <Text style={{ color: muted, marginTop: 8 }}>Recommended Firebase budget alerts: $5, $10, $25, $50, $100.</Text>
           <Text style={{ color: muted, marginTop: 8 }}>Future real leaderboard should read only summary docs, not every prediction document.</Text>
@@ -2093,6 +2110,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
     </SafeAreaView>
   );
 }
+
 
 function AvatarPicker({ dark, fg, profile = {}, onPick }) {
   const selectedAvatar = getAvatar(profile);
@@ -2119,6 +2137,7 @@ function AvatarPicker({ dark, fg, profile = {}, onPick }) {
     </View>
   );
 }
+
 
 function NotificationSettingsCard({ dark, fg }) {
   const [prefs, setPrefs] = useState(DEFAULT_NOTIFICATION_PREFS);
@@ -2172,7 +2191,7 @@ function NotificationSettingsCard({ dark, fg }) {
         </TouchableOpacity>
       ))}
       <Text style={{ color: COLORS.blue, fontWeight: '900', marginTop: 10 }}>
-        notification preferences
+        Build: Phase 3G notification preferences
       </Text>
     </View>
   );
@@ -2217,7 +2236,7 @@ function MenuScreen({ dark, fg, profile = {}, saveProfile, admin, onClose, fireb
           <Text style={{ color: fg }}>Sex: {profileSex}</Text>
           <Text style={{ color: fg }}>Country: {profileCountry}</Text>
           <Text style={{ color: fg }}>Account status: {firebaseUser ? 'Signed in online' : 'Local/guest mode'}</Text>
-          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>notification preferences</Text>
+          <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '900' }}>Build: Phase 3G notification preferences</Text>
         </View>
         <AvatarPicker dark={dark} fg={fg} profile={safeProfile} onPick={chooseAvatar} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
@@ -2697,6 +2716,7 @@ const styles = StyleSheet.create({
   },
 
 });
+
 
 // PHASE_3DB_WIRING_NOTE:
 // To wire the final delete button, call this from the Menu delete-account section:
