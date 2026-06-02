@@ -1267,7 +1267,7 @@ function CelebrationCard({ match, prediction, profile, dark }) {
         <Text style={styles.celebrationTitle}>{result.title}</Text>
         <Text style={{ color: fg }}>{result.message}</Text>
         <Text style={styles.celebration}>+{result.points} points</Text>
-        <ShareRow message={message} shareLabel="Share" copyLabel="" title="Share win" />
+        <ShareRow message={message} shareLabel="Share" title="Share" />
       </View>
     </View>
   );
@@ -1537,7 +1537,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             <ScoreStepper label={activeMatch.teamB} value={b} setValue={setB} disabled={status.locked} />
           </View>
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
-          <ShareRow message={shareMessage} shareLabel="Share" copyLabel="" title="Share" />
+          <ShareRow message={shareMessage} shareLabel="Share" title="Share" />
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Our Users Prediction</Text>
             <Text style={styles.blackScore}>{activeMatch.teamA} {fakeAverage(activeMatch.id, 1)} - {fakeAverage(activeMatch.id, 2)} {activeMatch.teamB}</Text>
@@ -1749,7 +1749,7 @@ function Groups({ dark, fg, champion, chooseChampion, setTeamOpen, adSettings, p
         <Text style={[styles.big, { color: fg }]}>Pick Your Champion</Text>
         <Text style={{ color: fg }}>Choose once. After confirmation, it is locked.</Text>
         <Text style={{ color: COLORS.green, fontWeight: '900', fontSize: 18, marginTop: 8 }}>{champion ? `Confirmed: ${FLAGS[champion]} ${champion}` : 'No champion selected yet'}</Text>
-        {champion ? <ShareRow message={championShareMessage(champion, profile)} shareLabel="Share" copyLabel=" champion text" title="Share" /> : null}
+        {champion ? <ShareRow message={championShareMessage(champion, profile)} shareLabel="Share" title="Share" /> : null}
       </View>
 
       <Text style={[styles.sectionTitle, { color: fg }]}>Groups</Text>
@@ -1802,7 +1802,7 @@ function NewsDetail({ item, onClose, dark }) {
         <Text style={[styles.big, { color: fg }]}>{item.title}</Text>
         <Text style={{ color: COLORS.amber, fontWeight: '900' }}>Source: {item.source} {item.date}</Text>
         <Text style={{ color: fg, fontSize: 16, marginTop: 16, lineHeight: 24 }}>{item.body}</Text>
-        <ShareRow message={newsShareMessage(item)} shareLabel="Share app with this news" copyLabel=" news text" title="Share news" />
+        <ShareRow message={newsShareMessage(item)} shareLabel="Share app with this news" title="Share" />
       </ScrollView>
     </SafeAreaView>
   );
@@ -1853,7 +1853,7 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
       
-      <ShareRow message={leaderboardShareMessage(profile)} shareLabel="Share" copyLabel=" challenge text" title="Share leaderboard" />
+      <ShareRow message={leaderboardShareMessage(profile)} shareLabel="Share" title="Share leaderboard" />
       <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: COLORS.amber }]}>
         <Text style={{ fontSize: 34 }}>{getAvatar(profile)}</Text>
         <View style={{ flex: 1 }}>
@@ -2373,7 +2373,7 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.blue }]}>
           <Text style={[styles.sectionTitle, { color: fg }]}>Invite Friends</Text>
           
-          <ShareRow message={inviteMessage} shareLabel="Share" copyLabel="" title="Invite friends" />
+          <ShareRow message={inviteMessage} shareLabel="Share" title="Invite friends" />
         </View>
         <NotificationSettingsCard dark={dark} fg={fg} />
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
@@ -2390,7 +2390,7 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
           <ButtonPill label="Email deletion request" onPress={() => emailDeleteRequest(safeAccount)} color={COLORS.amber} />
           <ButtonPill label="
 
-Delete My Account Permanently
+
 " onPress={() => copyShareMessage(deleteAccountRequestMessage(safeAccount))} color={COLORS.blue} />
           <ButtonPill label="" onPress={() => saveAccount({})} color="#64748b" />
         </View>
