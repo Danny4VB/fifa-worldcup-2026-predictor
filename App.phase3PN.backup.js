@@ -1,76 +1,4 @@
 
-// PHASE3PN_VISUAL_MEDIA_UPGRADE
-const PHASE3PN_WORLD_CUP_START_ISO = '2026-06-11T13:00:00-06:00';
-
-const phase3PNFormatCountdown = (targetIso = PHASE3PN_WORLD_CUP_START_ISO) => {
-  const now = Date.now();
-  const target = new Date(targetIso).getTime();
-  const diff = Math.max(0, target - now);
-
-  const totalSeconds = Math.floor(diff / 1000);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return {
-    days,
-    hours,
-    minutes,
-    seconds,
-    label: `${days}D ${String(hours).padStart(2, '0')}H ${String(minutes).padStart(2, '0')}M ${String(seconds).padStart(2, '0')}S`,
-  };
-};
-
-const PHASE3PN_DEFAULT_MEDIA = {
-  matchesHero: '',
-  groupsHero: '',
-  stadiumFallback: '',
-  teamFallback: '',
-  playerFallback: '',
-  sponsorBanner: '',
-};
-
-const phase3PNResolveImageUrl = (...urls) =>
-  urls.find((url) => typeof url === 'string' && url.trim().startsWith('http')) || '';
-
-const PHASE3PN_MEDIA_RULES = [
-  'Use large image holders to make the app feel more exciting.',
-  'Keep media URL-only for now to avoid upload/storage cost.',
-  'Admin can paste exact image URLs for stadiums, teams, players, coaches, and sponsor banners.',
-  'Use fallback holders when an image URL is missing.',
-];
-
-// PHASE3PN_MEDIA_STYLE_HINTS
-const PHASE3PN_MEDIA_STYLE_HINTS = {
-  phase3PNMediaHero: {
-    minHeight: 190,
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginBottom: 18,
-  },
-  phase3PNCountdownBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  phase3PNCountdownText: {
-    fontSize: 28,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-};
-
-// PHASE3PN_VISIBLE_MEDIA_LABELS
-const PHASE3PN_VISIBLE_MEDIA_LABELS = {
-  countdownTitle: 'WorldCup starts in',
-  matchesHeroTitle: 'WorldCup 2026 Countdown',
-  groupsHeroTitle: 'Teams, groups, and road to the final',
-  stadiumImageTitle: 'Stadium spotlight',
-  teamImagesTitle: 'Team spotlight',
-  adminMediaHint: 'Paste exact image URLs so stadium, team, player, and coach pictures do not get mixed.',
-};
-
 // PHASE3PM_ADMIN_MEDIA_MANAGER_URL_ONLY
 // URL-only media foundation. No Firebase Storage upload is used in this phase.
 const PHASE3PM_MEDIA_PATHS = {
@@ -2462,6 +2390,7 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
           <ButtonPill label="Email deletion request" onPress={() => emailDeleteRequest(safeAccount)} color={COLORS.amber} />
           <ButtonPill label="
 
+
 " onPress={() => copyShareMessage(deleteAccountRequestMessage(safeAccount))} color={COLORS.blue} />
           <ButtonPill label="" onPress={() => saveAccount({})} color="#64748b" />
         </View>
@@ -2479,15 +2408,6 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
 }
 
 export default function App() {
-  const [phase3PNCountdown, setPhase3PNCountdown] = useState(phase3PNFormatCountdown());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPhase3PNCountdown(phase3PNFormatCountdown());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const [dark, setDark] = useState(true);
   const [tab, setTab] = useState('matches');
   const [selected, setSelected] = useState(null);
@@ -2848,11 +2768,11 @@ const styles = StyleSheet.create({
   shareHint: { color: '#38bdf8', fontWeight: '800', marginBottom: 4, fontSize: 12 },
   shareRow: { flexDirection: 'row', gap: 8, alignItems: 'stretch', marginTop: 2 },
   sponsor: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: COLORS.slate },
-  sponsorLogo: { width: 92, height: 92, borderRadius: 14, backgroundColor: '#ffffff' },
+  sponsorLogo: { width: 86, height: 86, borderRadius: 14, backgroundColor: '#ffffff' },
   sponsorLogoFallback: { width: 74, height: 60, borderRadius: 14, borderWidth: 1, borderColor: COLORS.amber, alignItems: 'center', justifyContent: 'center' },
   sponsorLabel: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
   sponsorName: { fontWeight: '900', fontSize: 18, lineHeight: 22 },
-  sponsorText: { fontWeight: '800', fontSize: 20, color: COLORS.amber, width: 760, marginTop: 2 },
+  sponsorText: { fontWeight: '800', fontSize: 18, color: COLORS.amber, width: 760, marginTop: 2 },
   adBox: { height: 58, borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 10, overflow: 'hidden' },
   hiddenAdProbe: { height: 1, opacity: 0, overflow: 'hidden' },
   stepper: { flex: 1, alignItems: 'center', backgroundColor: '#02061788', padding: 10, borderRadius: 14 },
