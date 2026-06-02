@@ -1,17 +1,4 @@
-
-// PHASE3PA_HEADER_LAYOUT_POLISH
-// Header visual polish only: taller header, larger app logo, more breathing room under phone status bar.
-
-
-// PHASE3PA_HEADER_NOTES
-const PHASE3PA_HEADER_NOTES = [
-  'Header should feel taller and less crowded.',
-  'Logo should be easier to see.',
-  'Virtual Beehive Inc. and app title should be readable.',
-  'Mood and menu icons should stay aligned.'
-];
-
-\nimport React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, BackHandler, Image, Linking, Modal, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -37,7 +24,7 @@ const PHASE3O_IOS_LINK_TODO = 'Add Apple App Store link after iOS app is built a
 
 
 // PHASE3N_RELEASE_QA_DIAGNOSTICS
-const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3P-A header layout polish';
+const PHASE3N_APP_BUILD_LABEL = 'Build: Phase 3O production update prep';
 
 const PHASE3N_QA_CHECKLIST = [
   'App opens without crash',
@@ -291,7 +278,7 @@ const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
 const phase3KDirectImageUrlHelp =
   'Logo/image URLs should be direct image links when possible (.png, .jpg, .jpeg, or .webp). Google Drive preview links may not display correctly. If an image fails, the app should show text fallback instead of crashing.';
 
-const PHASE3K_BUILD_LABEL = 'Build: Phase 3P-A header layout polish';
+const PHASE3K_BUILD_LABEL = 'Build: Phase 3O production update prep';
 
 
 // PHASE3K_ADMIN_VALIDATION_TEXT
@@ -2450,11 +2437,11 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  header: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backButton: { backgroundColor: COLORS.amber, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
-  headerTitle: { flex: 1, fontSize: 24, fontWeight: '900' },
-  logo: { width: 56, height: 56, borderRadius: 26 },
+  headerTitle: { flex: 1, fontSize: 16, fontWeight: '900' },
+  logo: { width: 52, height: 52, borderRadius: 26 },
   iconBtn: { paddingHorizontal: 8, paddingVertical: 6 },
   tiny: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   title: { fontSize: 17, fontWeight: '900', lineHeight: 20 },
