@@ -193,7 +193,7 @@ const phase3PIContinentFromTeam = (team = {}) => {
     CONMEBOL: 'South America',
     OFC: 'Oceania',
   };
-  return map[key] || raw || 'Continent TBD';
+  return map[key] || raw || '';
 };
 
 // PHASE3PH_MENU_RESTRUCTURE_HEADER_FINAL
@@ -1791,7 +1791,7 @@ function GroupTableCard({ group, teams, fg, dark, champion, chooseChampion, setT
       <Text style={styles.groupHeader}>Group {group}</Text>
       {teams.map((team, index) => {
         const isChampion = champion === team;
-        const seedLabel = index < 2 ? phase3PIContinentFromTeam(team) : '';
+        const seedLabel = phase3PIContinentFromTeam(team);
         return (
           <TouchableOpacity
             key={team}
@@ -2462,7 +2462,6 @@ function MenuScreen({ dark, fg, profile = {}, saveAccount, admin, onClose, fireb
           <ButtonPill label="
 
 " onPress={() => copyShareMessage(deleteAccountRequestMessage(safeAccount))} color={COLORS.blue} />
-          <ButtonPill label="" onPress={() => saveAccount({})} color="#64748b" />
         </View>
         {admin ? (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }]}>
