@@ -22,8 +22,7 @@
         "backgroundColor": "#080B12"
       },
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "READ_MEDIA_IMAGES"
+        "ACCESS_COARSE_LOCATION"
       ]
     },
     "extra": {
