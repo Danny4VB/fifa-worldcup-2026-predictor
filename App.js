@@ -1659,7 +1659,7 @@ function StadiumCard({ match, dark, fg }) {
   );
 }
 
-function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, saveBestPlayer, adSettings, profile }) {
+function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTeamOpen, bestPlayers, bestPlayerPollSummaries = {}, saveBestPlayer, adSettings, profile }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   const [tab, setTab] = useState('summary');
   const [activeMatch, setActiveMatch] = useState(match);
@@ -1682,6 +1682,10 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
   const [a, setA] = useState(saved.a);
   const [b, setB] = useState(saved.b);
   const selectedBest = bestPlayers[String(match.id)];
+  const globalBestSummary = bestPlayerPollSummaries[String(match.id)] || {};
+  const globalTopPlayerName = globalBestSummary.topPlayerName || '';
+  const globalTopPlayerPercent = Number(globalBestSummary.topPlayerPercent || 0);
+  const globalTopPlayerVotes = Number(globalBestSummary.topPlayerVoteCount || 0);
   const status = matchStatus(activeMatch);
   const shareMessage = matchShareMessage(activeMatch, a, b, profile);
   return (
@@ -1730,7 +1734,32 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
             </View>
           </View>
         )}
-        {tab === 'compare' && <TeamCompare a={activeMatch.teamA} b={activeMatch.teamB} dark={dark} setTeamOpen={setTeamOpen} />}
+        {tab === 'head' && (
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Global Fan Pick</Text>
+          <Text style={{ color: fg, fontWeight: '900', fontSize: 18 }}>
+            {globalTopPlayerName
+              ? `Highest fan-selected player: ${globalTopPlayerName}`
+              : 'Highest fan-selected player will appear after fans vote.'}
+          </Text>
+          {!!globalTopPlayerName && (
+            <Text style={{ color: muted, marginTop: 6 }}>
+              {globalTopPlayerVotes} vote{globalTopPlayerVotes === 1 ? '' : 's'}{globalTopPlayerPercent ? ` • ${globalTopPlayerPercent}% of votes` : ''}
+            </Text>
+          )}
+          {selectedBest ? (
+            <Text style={{ color: COLORS.green, marginTop: 8, fontWeight: '800' }}>
+              Your pick: {selectedBest}
+            </Text>
+          ) : (
+            <Text style={{ color: muted, marginTop: 8 }}>
+              Select your fan best player below.
+            </Text>
+          )}
+        </View>
+      )}
+
+      {tab === 'compare' && <TeamCompare a={activeMatch.teamA} b={activeMatch.teamB} dark={dark} setTeamOpen={setTeamOpen} />}
         {tab === 'head' && (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
             <Text style={[styles.sectionTitle, { color: fg }]}>History</Text>
@@ -2587,6 +2616,7 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [predictions, setPredictions] = useState({});
   const [bestPlayers, setBestPlayers] = useState({});
+  const [bestPlayerPollSummaries, setBestPlayerPollSummaries] = useState({});
   const [champion, setChampion] = useState(null);
   const [profile, setAccount] = useState({ email: '', password: '', name: '', nickname: '', age: '', sex: '', location: '', country: '', avatar: '⚽', avatarEmoji: '⚽' });
   const [admin, setAdmin] = useState(false);
@@ -2695,6 +2725,16 @@ export default function App() {
     await AsyncStorage.setItem('bestPlayers', JSON.stringify(next));
     if (firebaseUser) {
       await writeDoc('bestPlayerVotes', `${id}_${firebaseUser.uid}`, { matchId: String(id), userId: firebaseUser.uid, playerName, updatedAt: serverTimestamp() });
+      setTimeout(async () => {
+        try {
+          const summary = await readDoc('bestPlayerPollSummary', String(id));
+          if (summary) {
+            setBestPlayerPollSummaries((prev) => ({ ...prev, [String(id)]: summary }));
+          }
+        } catch (e) {
+          console.log('bestPlayerPollSummary refresh failed', e?.message || e);
+        }
+      }, 1800);
       Alert.alert('Fan Player Poll saved online', `${playerName} selected as your fan best player of the game.`);
     } else {
       Alert.alert('Fan Player Poll saved locally', `${playerName} selected. Sign in to save online.`);
@@ -2842,7 +2882,7 @@ export default function App() {
         ))}
       </View>
       <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
-        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} bestPlayers={bestPlayers} saveBestPlayer={saveBestPlayer} adSettings={adSettings} profile={profile} />
+        <MatchDetail match={selected} onClose={() => setSelected(null)} dark={dark} predictions={predictions} savePrediction={savePrediction} setTeamOpen={setTeamOpen} bestPlayers={bestPlayers} bestPlayerPollSummaries={bestPlayerPollSummaries} saveBestPlayer={saveBestPlayer} adSettings={adSettings} profile={profile} />
       </Modal>
       <Modal visible={!!teamOpen} animationType="slide" onRequestClose={() => setTeamOpen(null)}>
         <TeamDetail team={teamOpen} onClose={() => setTeamOpen(null)} dark={dark} />
