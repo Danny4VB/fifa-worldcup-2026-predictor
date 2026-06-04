@@ -485,6 +485,19 @@ import { getFirestore, doc, getDoc, setDoc, serverTimestamp, deleteDoc, collecti
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import * as Clipboard from 'expo-clipboard';
 
+
+// PHASE4GB_FAN_POLL_HELPERS
+const getPhase4GBFanPollTopText = (poll = {}, localSelected = '') => {
+  if (poll && poll.overallTopPlayerName) {
+    return `Highest fan-selected player: ${poll.overallTopPlayerName}${poll.overallTopPlayerTeam ? ' — ' + poll.overallTopPlayerTeam : ''}`;
+  }
+  if (localSelected) {
+    return `Your selected fan best player: ${localSelected}`;
+  }
+  return 'Fan voting summary will appear when match player data is available.';
+};
+
+
 // PHASE3O_PRODUCTION_UPDATE_PREP
 const PHASE3O_VERSION_NAME = '1.0.1';
 const PHASE3O_RELEASE_NOTES =
@@ -1320,7 +1333,7 @@ const FIXTURES = buildFixtures();
 
 const NEWS = [
   { id: 1, title: 'World Cup 2026 tournament schedule is set', source: 'FIFA', date: '2026', body: 'The 2026 tournament features 48 teams, 12 groups, and 104 matches. This Phase 2A app shows a local fixture and prediction experience. Full live data can be connected in Phase 2B.' },
-  { id: 2, title: 'Fans can start preparing predictions', source: 'Virtual Beehive Inc.', date: '2026', body: 'Users can select matches, make score predictions, choose a champion once, and select a best player of the game. In this local preview, predictions are saved on the phone.' },
+  { id: 2, title: 'Fans can start preparing predictions', source: 'Virtual Beehive Inc.', date: '2026', body: 'Users can select matches, make score predictions, choose a champion once, and select a fan best player of the game. In this local preview, predictions are saved on the phone.' },
   { id: 3, title: 'Sponsor banner ready for Hobbee.FUN', source: 'Virtual Beehive Inc.', date: '2026', body: 'The sponsor banner is built as a moving banner and can later be controlled from the hidden admin tools or backend sponsor manager.' },
 ];
 
@@ -1706,7 +1719,7 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
         </View>
         {tab === 'summary' && (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.sectionTitle, { color: fg }]}>Best player of the game</Text>
+            <Text style={[styles.sectionTitle, { color: fg }]}>Fan Player Poll of the game</Text>
             <Text style={{ color: fg }}>Choose anytime before or after the match.</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
               {[...((TEAM_DETAILS[activeMatch.teamA] || {}).players || []), ...((TEAM_DETAILS[activeMatch.teamB] || {}).players || [])].slice(0, 10).map((p) => (
@@ -1720,8 +1733,8 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
         {tab === 'compare' && <TeamCompare a={activeMatch.teamA} b={activeMatch.teamB} dark={dark} setTeamOpen={setTeamOpen} />}
         {tab === 'head' && (
           <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.sectionTitle, { color: fg }]}>Previous matches</Text>
-            <Text style={{ color: fg }}>{activeMatch.previous}</Text>
+            <Text style={[styles.sectionTitle, { color: fg }]}>History</Text>
+            <Text style={{ color: fg }}>{activeMatch.previous || 'Head-to-head history will appear here when verified past match data is available.'}</Text>
             <AdBox dark={dark} tone={2} placement="matches" adSettings={adSettings} />
           </View>
         )}
@@ -2682,9 +2695,9 @@ export default function App() {
     await AsyncStorage.setItem('bestPlayers', JSON.stringify(next));
     if (firebaseUser) {
       await writeDoc('bestPlayerVotes', `${id}_${firebaseUser.uid}`, { matchId: String(id), userId: firebaseUser.uid, playerName, updatedAt: serverTimestamp() });
-      Alert.alert('Best player saved online', `${playerName} selected as your best player of the game.`);
+      Alert.alert('Fan Player Poll saved online', `${playerName} selected as your fan best player of the game.`);
     } else {
-      Alert.alert('Best player saved locally', `${playerName} selected. Sign in to save online.`);
+      Alert.alert('Fan Player Poll saved locally', `${playerName} selected. Sign in to save online.`);
     }
   }
 
