@@ -1,4 +1,82 @@
 
+// PHASE4GA_MATCH_DETAILS_HISTORY_POLL
+const PHASE4GA_MATCH_DETAILS_COLLECTION = 'matchDetails_2026';
+
+const buildPhase4GADefaultMatchDetails = (match = {}) => ({
+  matchId: String(match.id || match.matchId || match.matchNumber || ''),
+  historySummary: 'Head-to-head history will update when verified match data is available.',
+  previousMeetings: [],
+  teamAPlayers: [],
+  teamBPlayers: [],
+  teamACoach: '',
+  teamBCoach: '',
+  fanPoll: {
+    teamATopPlayerName: '',
+    teamATopPlayerPercent: 0,
+    teamBTopPlayerName: '',
+    teamBTopPlayerPercent: 0,
+    overallTopPlayerName: '',
+    overallTopPlayerTeam: '',
+  },
+  updatedAt: new Date().toISOString(),
+});
+
+const getPhase4GAPlayerLabel = (player = {}) => {
+  const number = player.number || player.jerseyNumber || '';
+  const name = player.name || 'Player';
+  const position = player.position || '';
+  return `${number ? '#' + number + ' ' : ''}${name}${position ? ' — ' + position : ''}`;
+};
+
+const getPhase4GATopPlayerText = (details = {}) => {
+  const poll = details.fanPoll || {};
+  if (poll.overallTopPlayerName) {
+    return `Fan top player: ${poll.overallTopPlayerName}${poll.overallTopPlayerTeam ? ' — ' + poll.overallTopPlayerTeam : ''}`;
+  }
+  return 'Fan top player voting will appear when player data is available.';
+};
+
+const PHASE4GA_HISTORY_EMPTY_TEXT =
+  'Previous meetings will appear here when verified head-to-head data is available.';
+
+const PHASE4GA_ROSTER_EMPTY_TEXT =
+  'Player names, numbers, positions, and coaches will update when roster data is imported.';
+
+const PHASE4GA_POLL_EMPTY_TEXT =
+  'Fan best-player poll opens when match/player data is ready.';
+
+const PHASE4GA_MATCH_DETAILS_NOTES = [
+  'History and player poll data should come from Firebase cache, not direct sports API calls from user phones.',
+  'Sports API/import scripts can populate matchDetails_2026 later.',
+  'No player photos are used in this phase.',
+  'No Firebase Storage is used in this phase.'
+];
+
+// PHASE4GA_MATCH_DETAILS_RENDER_HELPER
+const buildPhase4GAMatchDetailsSections = (match = {}, details = null) => {
+  const safeDetails = details || buildPhase4GADefaultMatchDetails(match);
+  const previousMeetings = Array.isArray(safeDetails.previousMeetings) ? safeDetails.previousMeetings : [];
+  const teamAPlayers = Array.isArray(safeDetails.teamAPlayers) ? safeDetails.teamAPlayers : [];
+  const teamBPlayers = Array.isArray(safeDetails.teamBPlayers) ? safeDetails.teamBPlayers : [];
+  return {
+    historyTitle: 'History',
+    historySummary: safeDetails.historySummary || PHASE4GA_HISTORY_EMPTY_TEXT,
+    previousMeetings,
+    lineupsTitle: 'Players & Coaches',
+    teamACoach: safeDetails.teamACoach || 'Coach coming soon',
+    teamBCoach: safeDetails.teamBCoach || 'Coach coming soon',
+    teamAPlayers: teamAPlayers.map(getPhase4GAPlayerLabel),
+    teamBPlayers: teamBPlayers.map(getPhase4GAPlayerLabel),
+    rosterEmptyText: PHASE4GA_ROSTER_EMPTY_TEXT,
+    pollTitle: 'Fan Player Poll',
+    topSelectedPlayerText: getPhase4GATopPlayerText(safeDetails),
+    pollEmptyText: PHASE4GA_POLL_EMPTY_TEXT,
+  };
+};
+
+// PHASE4GA_VISIBLE_PLACEHOLDER can be manually placed in match detail JSX when ready.
+
+
 // PHASE3PN_VISUAL_MEDIA_UPGRADE
 const PHASE3PN_WORLD_CUP_START_ISO = '2026-06-11T13:00:00-06:00';
 
@@ -2231,7 +2309,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <ToggleButton label="Test ads" active={adForm.useTestAds} onPress={() => setAdForm({ ...adForm, useTestAds: !adForm.useTestAds })} color={COLORS.amber} />
           <ToggleButton label="Auto-hide empty ads" active={adForm.autoHideOnNoFill} onPress={() => setAdForm({ ...adForm, autoHideOnNoFill: !adForm.autoHideOnNoFill })} />
           <ToggleButton label="Non-personalized request" active={adForm.nonPersonalized} onPress={() => setAdForm({ ...adForm, nonPersonalized: !adForm.nonPersonalized })} color={COLORS.blue} />
-          <ButtonPill label="Save ad settingss" onPress={saveAdSettings} color={COLORS.green} />
+          <ButtonPill label="Save ad settings" onPress={saveAdSettings} color={COLORS.green} />
         </View>
 
         <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { borderColor: COLORS.green }] }>
