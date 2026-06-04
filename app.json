@@ -13,7 +13,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.virtualbeehive.fifaworldcup2026predictor"
+      "bundleIdentifier": "com.virtualbeehive.fifaworldcup2026predictor",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.virtualbeehive.fifaworldcup2026predictor",
