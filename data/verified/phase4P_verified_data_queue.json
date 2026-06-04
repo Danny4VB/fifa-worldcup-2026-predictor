@@ -1,0 +1,75 @@
+[
+  {
+    "type": "head_to_head",
+    "priority": "high",
+    "matchKey": "mexico_vs_usa",
+    "teamA": "Mexico",
+    "teamB": "USA",
+    "status": "pending_verification",
+    "neededFields": [
+      "teamAWins",
+      "teamBWins",
+      "draws",
+      "previousMeetings",
+      "historySummary",
+      "sourceUrl",
+      "lastVerified"
+    ],
+    "notes": "Start with Mexico vs USA as the first verified head-to-head sample before expanding to all matches."
+  },
+  {
+    "type": "players",
+    "priority": "high",
+    "teamId": "mexico",
+    "status": "pending_verification",
+    "neededFields": [
+      "name",
+      "number",
+      "position",
+      "age",
+      "dateOfBirth",
+      "height",
+      "club",
+      "sourceUrl",
+      "lastVerified"
+    ],
+    "notes": "Use official or highly reliable roster sources only. Do not publish placeholder roster data as real."
+  },
+  {
+    "type": "players",
+    "priority": "high",
+    "teamId": "usa",
+    "status": "pending_verification",
+    "neededFields": [
+      "name",
+      "number",
+      "position",
+      "age",
+      "dateOfBirth",
+      "height",
+      "club",
+      "sourceUrl",
+      "lastVerified"
+    ],
+    "notes": "Use official or highly reliable roster sources only. Do not publish placeholder roster data as real."
+  },
+  {
+    "type": "stadium_media",
+    "priority": "medium",
+    "collection": "stadiums_2026",
+    "status": "pending_verification",
+    "neededFields": [
+      "stadiumId",
+      "name",
+      "city",
+      "country",
+      "capacity",
+      "stadiumImageUrl",
+      "imageCredit",
+      "imageLicense",
+      "sourceUrl",
+      "lastVerified"
+    ],
+    "notes": "Use licensed/direct image URLs only. Avoid Firebase Storage upload before final cost/security review."
+  }
+]
