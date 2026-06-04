@@ -49,7 +49,7 @@ async function main() {
 
   if (!firebaseConfig.projectId) {
     console.error('[missing env] EXPO_PUBLIC_FIREBASE_PROJECT_ID');
-    console.error('This importer needs Firebase env variables available in Codespaces.');
+    console.error('Firebase env variables are required before importing.');
     process.exit(1);
   }
 
