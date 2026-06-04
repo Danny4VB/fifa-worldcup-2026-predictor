@@ -2013,7 +2013,21 @@ function TeamDetail({ team, onClose, dark }) {
           <Jersey color={d.homeJersey || '#ffffff'} label="Home jersey" />
           <Jersey color={d.awayJersey || COLORS.blue} label="Away jersey" />
         </View>
+        <Text style={{ color: muted, marginBottom: 4 }}>Home: {d.homeJerseyDescription || 'Home jersey design pending verification.'}</Text>
+        <Text style={{ color: muted, marginBottom: 10 }}>Away: {d.awayJerseyDescription || 'Away jersey design pending verification.'}</Text>
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { marginBottom: 12 }]}>
+          <Text style={[styles.sectionTitle, { color: fg }]}>Stadium</Text>
+          <Text style={{ color: fg, fontWeight: '900' }}>{d.stadium || 'Stadium TBD'}</Text>
+          <Text style={{ color: muted }}>{[d.stadiumCity, d.stadiumCountry].filter(Boolean).join(', ') || 'Location pending'}</Text>
+          <Text style={{ color: muted }}>Capacity: {d.stadiumCapacity || 'TBD'}</Text>
+          {d.stadiumImageUrl ? (
+            <Text style={{ color: COLORS.blue, marginTop: 6 }}>Image URL saved for this stadium.</Text>
+          ) : (
+            <Text style={{ color: muted, marginTop: 6 }}>Stadium image will appear after admin adds a verified image URL.</Text>
+          )}
+        </View>
         <Text style={{ color: fg, lineHeight: 22 }}>{d.description}</Text>
+        <Text style={{ color: muted, marginTop: 8 }}>{d.rosterStatus || d.sourceStatus || 'Roster pending verified import.'}</Text>
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 16 }]}>Big achievements</Text>
         {d.achievements.map((x) => <Text key={x} style={{ color: fg }}>• {x}</Text>)}
         <Text style={[styles.sectionTitle, { color: fg, marginTop: 16 }]}>Players</Text>
