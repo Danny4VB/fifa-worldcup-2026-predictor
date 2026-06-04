@@ -502,7 +502,7 @@ const getPhase4GBFanPollTopText = (poll = {}, localSelected = '') => {
 const PHASE3O_VERSION_NAME = '1.0.1';
 const PHASE3O_RELEASE_NOTES =
   'Improved match predictions, groups/bracket, sharing, sponsor controls, avatars, account tools, and leaderboard foundations.';
-const PHASE3O_GOOGLE_PLAY_LINK = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
+const PHASE3O_GOOGLE_PLAY_LINK = 'https://fifa-worldcup-2026-predictor.web.app/app';
 const PHASE3O_IOS_LINK_TODO = 'Add Apple App Store link after iOS app is built and published.';
 
 // PHASE3N_RELEASE_QA_DIAGNOSTICS
@@ -1008,7 +1008,7 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
 }
 
 const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
-const APP_SHARE_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
+const APP_SHARE_URL = 'https://fifa-worldcup-2026-predictor.web.app/app';
 const APP_BRAND_LINE = 'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
 const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
 const PRIVACY_POLICY_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-privacy-policy';
