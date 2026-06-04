@@ -2299,7 +2299,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
 
   async function saveImageLinks() {
     if (!(await requireAdmin())) return;
-    const collection = String(imageForm.collection || 'stadiums').trim();
+    const collection = String(imageForm.collection || 'stadiums_2026').trim();
     const id = String(imageForm.docId || '').trim();
     if (!id) { Alert.alert('Missing document ID', 'Enter a stadium/team/player document ID.'); return; }
     const payload = {
@@ -2423,7 +2423,7 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
           <Text style={[styles.sectionTitle, { color: fg }]}>Image URL Manager Plus</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Add direct image links for stadiums, teams, coaches, players, and jerseys without Firebase Storage. Use one document at a time, for example collection stadiums with doc ID metlife, or collection players with doc ID argentina_messi.</Text>
           <Text style={{ color: muted, marginBottom: 8 }}>Direct image URLs are best. Avoid Google Drive preview links unless converted to a direct view URL.</Text>
-          <TextInput placeholder="Collection: stadiums, teams, players, coaches" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
+          <TextInput placeholder="Collection: stadiums_2026, teams_2026, players_2026, coaches_2026" placeholderTextColor="#94a3b8" value={imageForm.collection} onChangeText={(v)=>setImageForm({...imageForm,collection:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Document ID, example: metlife or argentina" placeholderTextColor="#94a3b8" value={imageForm.docId} onChangeText={(v)=>setImageForm({...imageForm,docId:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Main image URL" placeholderTextColor="#94a3b8" value={imageForm.imageUrl} onChangeText={(v)=>setImageForm({...imageForm,imageUrl:v})} style={inputStyle} autoCapitalize="none" />
           <TextInput placeholder="Exact stadium image URL" placeholderTextColor="#94a3b8" value={imageForm.stadiumImageUrl} onChangeText={(v)=>setImageForm({...imageForm,stadiumImageUrl:v})} style={inputStyle} autoCapitalize="none" />
