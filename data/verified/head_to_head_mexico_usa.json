@@ -1,0 +1,24 @@
+{
+  "type": "head_to_head",
+  "matchKey": "mexico_vs_usa",
+  "teamA": "Mexico",
+  "teamB": "USA",
+  "teamAWins": 38,
+  "teamBWins": 24,
+  "draws": 17,
+  "totalMeetings": 79,
+  "historySummary": "Mexico and the United States have one of CONCACAF's biggest football rivalries. Based on all-time rivalry records, Mexico leads the series with 38 wins, while the USA has 24 wins and 17 matches ended in draws.",
+  "previousMeetings": [
+    {
+      "date": "2025-07-06",
+      "score": "USA 1-2 Mexico",
+      "competition": "CONCACAF Gold Cup",
+      "note": "Mexico defeated the United States in the 2025 CONCACAF Gold Cup final."
+    }
+  ],
+  "sourceUrl": "https://en.wikipedia.org/wiki/Mexico%E2%80%93United_States_soccer_rivalry",
+  "secondarySourceUrl": "https://us-soccer.team/head-to-head/mexico",
+  "status": "verified_sample",
+  "lastVerified": "2026-06-04",
+  "notes": "All-time record counts can vary by source methodology. This sample uses the 79-match rivalry record as the first verified app data sample."
+}
