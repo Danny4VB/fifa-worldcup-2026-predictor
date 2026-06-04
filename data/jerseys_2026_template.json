@@ -1,0 +1,20 @@
+[
+  {
+    "teamId": "mexico",
+    "teamName": "Mexico",
+    "home": {
+      "primaryColor": "Green",
+      "secondaryColor": "Red / White",
+      "description": "",
+      "imageUrl": "",
+      "sourceUrl": ""
+    },
+    "away": {
+      "primaryColor": "White",
+      "secondaryColor": "Green / Red",
+      "description": "",
+      "imageUrl": "",
+      "sourceUrl": ""
+    }
+  }
+]
