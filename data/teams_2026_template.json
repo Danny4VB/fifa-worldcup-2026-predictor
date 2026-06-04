@@ -2,8 +2,17 @@
   {
     "teamId": "argentina",
     "name": "Argentina",
+    "flag": "",
     "group": "TBD",
+    "continent": "",
     "confederation": "CONMEBOL",
-    "fifaCode": "ARG"
+    "fifaCode": "ARG",
+    "coachId": "argentina",
+    "coachName": "",
+    "stadiumId": "",
+    "jerseyId": "argentina",
+    "rosterStatus": "Pending verification",
+    "sourceUrl": "",
+    "lastVerified": ""
   }
 ]

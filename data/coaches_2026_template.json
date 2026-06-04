@@ -1,8 +1,14 @@
 [
   {
+    "coachId": "argentina",
     "teamId": "argentina",
+    "teamName": "",
     "coachName": "Coach name TBD",
-    "source": "TBD",
-    "lastVerified": null
+    "nationality": "",
+    "age": "",
+    "dateOfBirth": "",
+    "sourceUrl": "TBD",
+    "lastVerified": "",
+    "notes": ""
   }
 ]

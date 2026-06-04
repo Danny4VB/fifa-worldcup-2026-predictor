@@ -1,11 +1,18 @@
 [
   {
-    "teamId": "argentina",
     "playerId": "argentina_player_template",
+    "teamId": "argentina",
+    "teamName": "",
     "name": "Player name TBD",
-    "number": null,
+    "number": "",
     "position": "TBD",
-    "source": "TBD",
-    "lastVerified": null
+    "age": "",
+    "dateOfBirth": "",
+    "height": "",
+    "club": "",
+    "nationality": "",
+    "sourceUrl": "TBD",
+    "lastVerified": "",
+    "notes": "No player photo stored in this phase."
   }
 ]

@@ -1,17 +1,30 @@
 [
   {
+    "jerseyId": "argentina",
     "teamId": "argentina",
+    "teamName": "",
     "home": {
       "primaryColor": "TBD",
       "secondaryColor": "TBD",
-      "description": "Home jersey design TBD"
+      "accentColor": "",
+      "description": "Home jersey design TBD",
+      "imageUrl": "",
+      "sourceUrl": "",
+      "imageCredit": "",
+      "imageLicense": ""
     },
     "away": {
       "primaryColor": "TBD",
       "secondaryColor": "TBD",
-      "description": "Away jersey design TBD"
+      "accentColor": "",
+      "description": "Away jersey design TBD",
+      "imageUrl": "",
+      "sourceUrl": "",
+      "imageCredit": "",
+      "imageLicense": ""
     },
-    "source": "TBD",
-    "lastVerified": null
+    "sourceUrl": "TBD",
+    "lastVerified": "",
+    "notes": "Use descriptive jersey data unless licensed image URLs are available."
   }
 ]

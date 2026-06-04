@@ -5,7 +5,12 @@
     "teamB": "USA",
     "meetings": [],
     "summary": "Head-to-head history TBD",
-    "source": "TBD",
-    "lastVerified": null
+    "teamAWins": "",
+    "teamBWins": "",
+    "draws": "",
+    "lastMeetingDate": "",
+    "sourceUrl": "TBD",
+    "lastVerified": "",
+    "notes": "Use verified historical match source before publishing."
   }
 ]
