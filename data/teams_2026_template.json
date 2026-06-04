@@ -1,10 +1,9 @@
 [
   {
-    "teamId": "mexico",
-    "name": "Mexico",
-    "flag": "🇲🇽",
-    "continent": "North America",
-    "confederation": "CONCACAF",
-    "group": "A"
+    "teamId": "argentina",
+    "name": "Argentina",
+    "group": "TBD",
+    "confederation": "CONMEBOL",
+    "fifaCode": "ARG"
   }
 ]

@@ -1,20 +1,17 @@
 [
   {
-    "teamId": "mexico",
-    "teamName": "Mexico",
+    "teamId": "argentina",
     "home": {
-      "primaryColor": "Green",
-      "secondaryColor": "Red / White",
-      "description": "",
-      "imageUrl": "",
-      "sourceUrl": ""
+      "primaryColor": "TBD",
+      "secondaryColor": "TBD",
+      "description": "Home jersey design TBD"
     },
     "away": {
-      "primaryColor": "White",
-      "secondaryColor": "Green / Red",
-      "description": "",
-      "imageUrl": "",
-      "sourceUrl": ""
-    }
+      "primaryColor": "TBD",
+      "secondaryColor": "TBD",
+      "description": "Away jersey design TBD"
+    },
+    "source": "TBD",
+    "lastVerified": null
   }
 ]

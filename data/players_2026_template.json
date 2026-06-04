@@ -1,11 +1,11 @@
 [
   {
-    "playerId": "mexico_player_01",
-    "teamId": "mexico",
-    "teamName": "Mexico",
-    "name": "Player name",
-    "number": "",
-    "position": "Goalkeeper / Defender / Midfielder / Forward",
-    "sourceUrl": ""
+    "teamId": "argentina",
+    "playerId": "argentina_player_template",
+    "name": "Player name TBD",
+    "number": null,
+    "position": "TBD",
+    "source": "TBD",
+    "lastVerified": null
   }
 ]
