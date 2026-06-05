@@ -2333,19 +2333,42 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
   }
 
   async function saveAdSettings() {
-    if (!(await requireAdmin())) return;
-    const payload = {
-      adsEnabled: adForm.adsEnabled === true,
-      useTestAds: adForm.useTestAds === true,
-      nonPersonalized: adForm.nonPersonalized !== false,
-      autoHideOnNoFill: adForm.autoHideOnNoFill !== false,
-      updatedBy: firebaseUser.uid,
-      updatedAt: serverTimestamp(),
-    };
-    await writeDoc('appConfig', 'ads', payload);
-    if (onAdSettingsSaved) onAdSettingsSaved(payload);
-    await logAdminAction('save_ad_settings', 'appConfig/ads', payload);
-    Alert.alert('Ad settings saved', 'Ads were saved and applied on this device. Other users will receive the setting from Firebase.');
+    if (!firebaseUser) {
+      Alert.alert('Admin sign-in required', 'Please sign in with the approved admin account first.');
+      return;
+    }
+
+    let freshAdmin = admin === true;
+
+    try {
+      const adminDoc = await readDoc('users', firebaseUser.uid);
+      freshAdmin = freshAdmin || adminDoc?.isAdmin === true;
+
+      if (!freshAdmin) {
+        Alert.alert(
+          'Admin access not found',
+          `Signed in as: ${firebaseUser.email || 'unknown'}\nUID: ${firebaseUser.uid}\n\nIn Firebase Firestore, set users/${firebaseUser.uid}/isAdmin to Boolean true.`
+        );
+        return;
+      }
+
+      const payload = {
+        adsEnabled: adForm.adsEnabled === true,
+        useTestAds: adForm.useTestAds === true,
+        nonPersonalized: adForm.nonPersonalized !== false,
+        autoHideOnNoFill: adForm.autoHideOnNoFill !== false,
+        updatedBy: firebaseUser.uid,
+        updatedAt: serverTimestamp(),
+      };
+
+      await writeDoc('appConfig', 'ads', payload);
+      if (onAdSettingsSaved) onAdSettingsSaved(payload);
+      await logAdminAction('save_ad_settings', 'appConfig/ads', payload);
+      Alert.alert('Ad settings saved', 'AdMob settings were saved and applied on this device.');
+    } catch (e) {
+      console.log('Ad settings save failed', e?.message || e);
+      Alert.alert('Ad settings failed', String(e?.message || e));
+    }
   }
 
   const StatusButton = ({ value, label }) => (
