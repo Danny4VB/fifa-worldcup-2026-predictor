@@ -1545,20 +1545,33 @@ function AdBox({ dark, tone = 0, placement = 'matches', adSettings = DEFAULT_AD_
   const borders = dark ? ['#334155', '#475569', '#14532d'] : ['#cbd5e1', '#fed7aa', '#a5f3fc'];
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [errorText, setErrorText] = useState('');
 
-  if (!settings.adsEnabled || (failed && settings.autoHideOnNoFill)) return null;
+  if (!settings.adsEnabled) return null;
+  if (failed && settings.autoHideOnNoFill) return null;
 
   return (
-    <View style={loaded ? [styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }] : styles.hiddenAdProbe}> 
-      {loaded ? <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900', marginBottom: 6 }}>Advertisement</Text> : null}
+    <View style={[styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }]}> 
+      <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900', marginBottom: 6 }}>
+        {loaded ? 'Advertisement' : failed ? 'Ad failed to load' : 'Ad loading...'}
+      </Text>
       <BannerAd
         unitId={getAdUnitId(placement, settings)}
         size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
         requestOptions={{ requestNonPersonalizedAdsOnly: settings.nonPersonalized !== false }}
-        onAdLoaded={() => setLoaded(true)}
-        onAdFailedToLoad={() => setFailed(true)}
+        onAdLoaded={() => {
+          setLoaded(true);
+          setFailed(false);
+          setErrorText('');
+        }}
+        onAdFailedToLoad={(error) => {
+          setFailed(true);
+          setLoaded(false);
+          setErrorText(error?.message || error?.code || 'Unknown AdMob error');
+        }}
       />
-      {loaded && settings.useTestAds ? <Text style={{ color: dark ? '#64748b' : '#94a3b8', fontSize: 10, marginTop: 4 }}>Test ads enabled</Text> : null}
+      {settings.useTestAds ? <Text style={{ color: dark ? '#64748b' : '#94a3b8', fontSize: 10, marginTop: 4 }}>Test ads enabled</Text> : null}
+      {failed ? <Text style={{ color: '#ef4444', fontSize: 10, marginTop: 4 }}>{errorText}</Text> : null}
     </View>
   );
 }
