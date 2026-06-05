@@ -958,10 +958,10 @@ const ADMOB_AD_UNITS = {
 // For public builds, keep test ads off. Ad slots will automatically hide if AdMob has no fill.
 const USE_ADMOB_TEST_ADS = false;
 const DEFAULT_AD_SETTINGS = {
-  adsEnabled: false,
+  adsEnabled: true,
   useTestAds: USE_ADMOB_TEST_ADS,
   nonPersonalized: true,
-  autoHideOnNoFill: true,
+  autoHideOnNoFill: false,
 };
 
 const AVATAR_OPTIONS = [
