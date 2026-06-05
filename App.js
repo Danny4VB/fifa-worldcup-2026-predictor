@@ -961,7 +961,7 @@ const DEFAULT_AD_SETTINGS = {
   adsEnabled: true,
   useTestAds: USE_ADMOB_TEST_ADS,
   nonPersonalized: true,
-  autoHideOnNoFill: false,
+  autoHideOnNoFill: true,
 };
 
 const AVATAR_OPTIONS = [
@@ -1003,7 +1003,7 @@ function safeText(value, fallback = 'Not set') {
 }
 
 function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
-  if (settings?.useTestAds) return TestIds.BANNER;
+  if (settings?.useTestAds === true) return TestIds.BANNER;
   return ADMOB_AD_UNITS[placement] || ADMOB_AD_UNITS.matches;
 }
 
@@ -1553,9 +1553,10 @@ function AdBox({ dark, tone = 0, placement = 'matches', adSettings = DEFAULT_AD_
   return (
     <View style={[styles.adBox, { backgroundColor: backgrounds[tone % backgrounds.length], borderColor: borders[tone % borders.length] }]}> 
       <Text style={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: '900', marginBottom: 6 }}>
-        {loaded ? 'Advertisement' : failed ? 'Ad failed to load' : 'Ad loading...'}
+        {loaded ? 'Advertisement' : failed ? 'Advertisement unavailable' : 'Ad loading...'}
       </Text>
       <BannerAd
+        key={`${placement}-${settings.useTestAds ? 'test' : 'real'}-${settings.nonPersonalized !== false ? 'npa' : 'pa'}`}
         unitId={getAdUnitId(placement, settings)}
         size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
         requestOptions={{ requestNonPersonalizedAdsOnly: settings.nonPersonalized !== false }}
