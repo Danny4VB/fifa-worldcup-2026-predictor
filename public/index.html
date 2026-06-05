@@ -44,14 +44,16 @@
       text-align: center;
     }
     .logo {
-      width: 96px;
-      height: 96px;
-      border-radius: 24px;
-      margin: 0 auto 18px;
-      background: white;
-      display: grid;
-      place-items: center;
-      font-size: 52px;
+      width: min(260px, 70vw);
+      height: auto;
+      max-height: 260px;
+      border-radius: 28px;
+      margin: 0 auto 22px;
+      background: transparent;
+      display: block;
+      object-fit: contain;
+      padding: 0;
+      filter: drop-shadow(0 18px 36px rgba(0,0,0,.35));
     }
     h1 {
       margin: 0;
@@ -102,28 +104,28 @@
 </head>
 <body>
   <main class="card">
-    <div class="logo">⚽</div>
+    <img class="logo" src="/app-logo.png" alt="FIFA WorldCup 2026 Predictor app logo" />
     <h1>FIFA WorldCup 2026 Predictor</h1>
     <p>Predict matches, pick your champion, compare with fans, and share your World Cup predictions.</p>
     <div id="status" class="status">Checking your device...</div>
 
     <div class="buttons">
-      <a id="iosLink" class="button" href="#" rel="noopener">Download on App Store</a>
-      <a id="androidLink" class="button secondary" href="https://play.google.com/store/apps/details?id=com.virtualbeehive.worldcuppredictor" rel="noopener">Get it on Google Play</a>
+      <a id="iosLink" class="button" href="#ios-coming-soon" rel="noopener">App Store Coming Soon</a>
+      <a id="androidLink" class="button secondary" href="https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor&pcampaignid=web_share" rel="noopener">Get it on Google Play</a>
     </div>
 
     <div class="small">If you are not redirected automatically, choose your app store above.</div>
   </main>
 
   <script>
-    const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.virtualbeehive.worldcuppredictor";
+    const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor&pcampaignid=web_share";
 
     /*
       Replace this after Apple approval with the real App Store URL.
       Example:
       https://apps.apple.com/us/app/fifa-worldcup-2026-predictor/id1234567890
     */
-    const APPLE_APP_STORE_URL = "https://apps.apple.com/";
+    const APPLE_APP_STORE_URL = "#ios-coming-soon";
 
     const ua = navigator.userAgent || navigator.vendor || window.opera || "";
     const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -142,8 +144,7 @@
       }
 
       if (isIOS) {
-        status.textContent = "Opening the App Store...";
-        window.location.href = APPLE_APP_STORE_URL;
+        status.textContent = "The iPhone version is coming soon.";
         return;
       }
 

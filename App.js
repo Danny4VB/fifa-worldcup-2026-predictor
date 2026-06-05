@@ -2208,11 +2208,33 @@ function AdminScreen({ dark, onClose, firebaseUser, admin, onAdSettingsSaved, on
   }, []);
 
   async function requireAdmin() {
-    if (!firebaseUser || !admin) {
-      Alert.alert('Admin access required', 'Please sign in with the approved admin account first.');
+    if (!firebaseUser) {
+      Alert.alert('Admin sign-in required', 'Please sign in with the approved admin account first.');
       return false;
     }
-    return true;
+
+    if (admin === true) {
+      return true;
+    }
+
+    try {
+      const adminDoc = await readDoc('users', firebaseUser.uid);
+
+      if (adminDoc?.isAdmin === true) {
+        setAdmin(true);
+        return true;
+      }
+
+      Alert.alert(
+        'Admin access not found',
+        `Signed in as: ${firebaseUser.email || 'unknown'}\nUID: ${firebaseUser.uid}\n\nIn Firebase Firestore, set users/${firebaseUser.uid}/isAdmin to Boolean true.`
+      );
+      return false;
+    } catch (e) {
+      console.log('Admin verification failed', e?.message || e);
+      Alert.alert('Admin verification failed', String(e?.message || e));
+      return false;
+    }
   }
 
   async function logAdminAction(action, target, details = {}) {
