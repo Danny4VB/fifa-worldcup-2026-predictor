@@ -156,3 +156,29 @@ Commit current recovery/status note:
 git add CURRENT_RELEASE_STATUS_RECOVERY.md
 git commit -m "Add current release recovery status"
 git push
+
+## End-of-day status update
+
+Stopped here:
+- Smart share/download link works.
+- Firebase Hosting smart link redirects Android to Google Play correctly.
+- Smart link page now uses enlarged app logo with no white background.
+- Apple App Store button remains Coming Soon placeholder.
+- Firestore Rules were fixed for appConfig.
+- AdMob admin save now works.
+- Test ads show in app when Test Ads are ON.
+- Real ads do not show yet when Test Ads are OFF, likely due to AdMob readiness / no-fill / app-ads.txt / policy / propagation, not app code.
+- Sponsor save works.
+- Match Manager Save Match Update works.
+- Stadium image URL saved to Firebase but does not show yet in match detail.
+- Next issue to fix: stadium image display wiring/path.
+- After that: clean match detail text such as "Our Users Prediction" and placeholder wording.
+- Avoid unnecessary EAS builds due Expo build-credit warning.
+
+Next steps:
+1. Inspect stadium image wiring in App.js.
+2. Confirm whether match detail reads stadiums/mexico_city or another path/field.
+3. Fix stadium image display.
+4. Clean release text.
+5. Run export.
+6. Use one final preview build only when ready.
