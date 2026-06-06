@@ -1797,9 +1797,9 @@ function MatchDetail({ match, onClose, dark, predictions, savePrediction, setTea
           <ButtonPill label="Confirm / Save Prediction" disabled={status.locked} onPress={() => savePrediction(match.id, a, b)} color={COLORS.green} />
           <ShareRow message={shareMessage} shareLabel="Share" title="Share" />
           <View style={styles.blackBox}>
-            <Text style={styles.blackTitle}>Our Users Prediction</Text>
+            <Text style={styles.blackTitle}>Community Prediction</Text>
             <Text style={styles.blackScore}>{activeMatch.teamA} {fakeAverage(activeMatch.id, 1)} - {fakeAverage(activeMatch.id, 2)} {activeMatch.teamB}</Text>
-            <Text style={styles.blackSmall}>Placeholder until backend global averages are connected.</Text>
+            <Text style={styles.blackSmall}>Community prediction average will appear here as more fans submit predictions.</Text>
           </View>
           <View style={styles.blackBox}>
             <Text style={styles.blackTitle}>Live Score</Text>
@@ -1882,7 +1882,7 @@ function CoachCard({ team, dark, fg }) {
       <Text style={{ fontSize: 34 }}>🧑‍💼</Text>
       <View style={{ flex: 1 }}>
         <Text style={{ color: fg, fontWeight: '900' }}>{d.coach || `${team} Coach`}</Text>
-        <Text style={{ color: fg, fontSize: 12 }}>Head coach passport photo placeholder</Text>
+        <Text style={{ color: fg, fontSize: 12 }}>Head coach image coming soon</Text>
       </View>
     </View>
   );
