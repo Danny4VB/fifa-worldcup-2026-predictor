@@ -1693,9 +1693,54 @@ function ScoreStepper({ label, value, setValue, disabled }) {
 }
 
 function StadiumCard({ match, dark, fg }) {
+  const [phase3PSMatchStadiumImageUrl, setPhase3PSMatchStadiumImageUrl] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadMatchStadiumImage() {
+      const localUrl = getPhase3PSImageFromDoc(match);
+      if (localUrl && active) {
+        setPhase3PSMatchStadiumImageUrl(localUrl);
+      }
+
+      const ids = getPhase3PSStadiumDocIds(match, match || {});
+      const collections = ['stadiums_2026', 'stadiums'];
+
+      for (const collectionName of collections) {
+        for (const id of ids) {
+          try {
+            const remote = await readDocCached(collectionName, id, COST_CONTROL.longCacheMs || COST_CONTROL.shortCacheMs);
+            const remoteUrl = getPhase3PSImageFromDoc(remote);
+            if (remoteUrl && active) {
+              setPhase3PSMatchStadiumImageUrl(remoteUrl);
+              return;
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    setPhase3PSMatchStadiumImageUrl('');
+    loadMatchStadiumImage();
+
+    return () => {
+      active = false;
+    };
+  }, [match?.id, match?.stadium, match?.city]);
+
   return (
     <View style={[styles.stadiumHero, dark ? { backgroundColor: '#111827' } : { backgroundColor: '#e2e8f0' }]}>
-      <Text style={styles.stadiumEmoji}>🏟️</Text>
+      {phase3PSMatchStadiumImageUrl ? (
+        <Image
+          source={{ uri: phase3PSMatchStadiumImageUrl }}
+          resizeMode="cover"
+          style={styles.phase3PSStadiumHeroImage}
+          onError={() => setPhase3PSMatchStadiumImageUrl('')}
+        />
+      ) : (
+        <Text style={styles.stadiumEmoji}>🏟️</Text>
+      )}
       <View style={styles.stadiumOverlay}>
         <Text style={styles.stadiumTitle}>{match.stadium}</Text>
         <Text style={styles.stadiumText}>{match.city}, {match.state} {match.country}</Text>
@@ -3147,6 +3192,7 @@ const styles = StyleSheet.create({
   blackSmall: { color: '#94a3b8', fontSize: 11, textAlign: 'center' },
   stadiumHero: { minHeight: 170, borderRadius: 22, overflow: 'hidden', marginBottom: 12, borderWidth: 1, borderColor: COLORS.amber },
   stadiumEmoji: { position: 'absolute', right: 18, top: 8, fontSize: 94, opacity: 0.28 },
+  phase3PSStadiumHeroImage: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, width: '100%', height: '100%' },
   stadiumOverlay: { flex: 1, justifyContent: 'flex-end', padding: 16, backgroundColor: '#02061788' },
   stadiumTitle: { color: '#fff', fontSize: 22, fontWeight: '900' },
   stadiumText: { color: '#e2e8f0', fontSize: 14, marginTop: 2 },
