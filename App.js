@@ -486,6 +486,39 @@ import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads'
 import * as Clipboard from 'expo-clipboard';
 
 
+
+// PHASE3PS_STADIUM_IMAGE_HELPERS
+const phase3PSSlug = (value = '') =>
+  String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const getPhase3PSStadiumDocIds = (team = '', details = {}) => {
+  const candidates = [
+    details.stadiumId,
+    details.stadiumDocId,
+    details.stadiumSlug,
+    phase3PSSlug(details.stadium || ''),
+    phase3PSSlug(team || ''),
+    team,
+  ].filter(Boolean);
+
+  return [...new Set(candidates)];
+};
+
+const getPhase3PSImageFromDoc = (doc = {}) =>
+  normalizeImageUrl(
+    doc.stadiumImageUrl ||
+    doc.imageUrl ||
+    doc.url ||
+    doc.photoUrl ||
+    ''
+  );
+
+
 // PHASE4GB_FAN_POLL_HELPERS
 const getPhase4GBFanPollTopText = (poll = {}, localSelected = '') => {
   if (poll && poll.overallTopPlayerName) {
@@ -2016,6 +2049,42 @@ function NewsDetail({ item, onClose, dark }) {
 function TeamDetail({ team, onClose, dark }) {
   const fg = dark ? '#ffffff' : '#0f172a';
   const d = TEAM_DETAILS[team] || { players: [], achievements: [] };
+  const [phase3PSStadiumImageUrl, setPhase3PSStadiumImageUrl] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadStadiumImage() {
+      const localUrl = getPhase3PSImageFromDoc(d);
+      if (localUrl && active) {
+        setPhase3PSStadiumImageUrl(localUrl);
+      }
+
+      const ids = getPhase3PSStadiumDocIds(team, d);
+      const collections = ['stadiums_2026', 'stadiums'];
+
+      for (const collectionName of collections) {
+        for (const id of ids) {
+          try {
+            const remote = await readDocCached(collectionName, id, COST_CONTROL.longCacheMs || COST_CONTROL.shortCacheMs);
+            const remoteUrl = getPhase3PSImageFromDoc(remote);
+            if (remoteUrl && active) {
+              setPhase3PSStadiumImageUrl(remoteUrl);
+              return;
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    setPhase3PSStadiumImageUrl('');
+    loadStadiumImage();
+
+    return () => {
+      active = false;
+    };
+  }, [team]);
+
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: dark ? COLORS.darkBg : COLORS.lightBg }] }>
       <BackHeader title={team} onBack={onClose} dark={dark} />
@@ -2034,8 +2103,19 @@ function TeamDetail({ team, onClose, dark }) {
           <Text style={{ color: fg, fontWeight: '900' }}>{d.stadium || 'Stadium TBD'}</Text>
           <Text style={{ color: muted }}>{[d.stadiumCity, d.stadiumCountry].filter(Boolean).join(', ') || 'Location pending'}</Text>
           <Text style={{ color: muted }}>Capacity: {d.stadiumCapacity || 'TBD'}</Text>
-          {d.stadiumImageUrl ? (
-            <Text style={{ color: COLORS.blue, marginTop: 6 }}>Image URL saved for this stadium.</Text>
+          {phase3PSStadiumImageUrl ? (
+            <Image
+              source={{ uri: phase3PSStadiumImageUrl }}
+              resizeMode="cover"
+              style={{
+                width: '100%',
+                height: 170,
+                borderRadius: 16,
+                marginTop: 10,
+                backgroundColor: dark ? '#020617' : '#e5e7eb',
+              }}
+              onError={() => setPhase3PSStadiumImageUrl('')}
+            />
           ) : (
             <Text style={{ color: muted, marginTop: 6 }}>Stadium image will appear after admin adds a verified image URL.</Text>
           )}
