@@ -771,7 +771,65 @@ const buildPhase3LLeaderboardRecord = ({ userId, profile = {}, totals = {} }) =>
 
 const PHASE3L_LEADERBOARD_HELP_TEXT =
   'Leaderboard loads top 25 first to control Firebase reads. Use Load more for additional predictors.';
+function scorePredictionAgainstMatch(match, prediction) {
+  if (!match || !prediction) {
+    return { points: 0, exactScores: 0, correctWinners: 0, correctDraws: 0 };
+  }
 
+  const finalScore = match.finalScore || match.liveScore || [];
+  const matchFinished = String(match.status || '').toLowerCase() === 'finished' || match.isFinal === true;
+
+  if (!matchFinished || finalScore.length < 2) {
+    return { points: 0, exactScores: 0, correctWinners: 0, correctDraws: 0 };
+  }
+
+  const actualA = Number(finalScore[0]);
+  const actualB = Number(finalScore[1]);
+  const predictedA = Number(prediction.a);
+  const predictedB = Number(prediction.b);
+
+  if (!Number.isFinite(actualA) || !Number.isFinite(actualB) || !Number.isFinite(predictedA) || !Number.isFinite(predictedB)) {
+    return { points: 0, exactScores: 0, correctWinners: 0, correctDraws: 0 };
+  }
+
+  if (actualA === predictedA && actualB === predictedB) {
+    return { points: 100, exactScores: 1, correctWinners: 0, correctDraws: 0 };
+  }
+
+  const actualDraw = actualA === actualB;
+  const predictedDraw = predictedA === predictedB;
+
+  if (actualDraw && predictedDraw) {
+    return { points: 50, exactScores: 0, correctWinners: 0, correctDraws: 1 };
+  }
+
+  const actualWinner = actualA > actualB ? 'A' : 'B';
+  const predictedWinner = predictedA > predictedB ? 'A' : predictedB > predictedA ? 'B' : 'DRAW';
+
+  if (actualWinner === predictedWinner) {
+    return { points: 50, exactScores: 0, correctWinners: 1, correctDraws: 0 };
+  }
+
+  return { points: 0, exactScores: 0, correctWinners: 0, correctDraws: 0 };
+}
+
+function calculateLeaderboardTotalsFromPredictions(predictionMap = {}) {
+  return Object.entries(predictionMap || {}).reduce(
+    (totals, [matchId, prediction]) => {
+      const match = FIXTURES.find((m) => String(m.id) === String(matchId));
+      const scored = scorePredictionAgainstMatch(match, prediction);
+
+      return {
+        points: totals.points + scored.points,
+        exactScores: totals.exactScores + scored.exactScores,
+        correctWinners: totals.correctWinners + scored.correctWinners,
+        correctDraws: totals.correctDraws + scored.correctDraws,
+        matchesScored: totals.matchesScored + 1,
+      };
+    },
+    { points: 0, exactScores: 0, correctWinners: 0, correctDraws: 0, matchesScored: 0 }
+  );
+}
 // PHASE3K_ADMIN_VALIDATION_HELPERS
 const phase3KAdminStatusText = (adsConfig = {}, sponsorConfig = {}) => {
   const yn = (v) => (v ? 'ON' : 'OFF');
@@ -2973,21 +3031,14 @@ export default function App() {
         updatedAt: serverTimestamp(),
       });
 
-      const userPredictions = Object.values(next || {});
-      const points = userPredictions.length * 1;
+              const leaderboardTotals = calculateLeaderboardTotalsFromPredictions(next);
       const leaderboardRecord = buildPhase3LLeaderboardRecord({
         userId: firebaseUser.uid,
         profile: {
           ...profile,
           email: firebaseUser.email || profile.email || '',
         },
-        totals: {
-          points,
-          matchesScored: userPredictions.length,
-          correctWinners: 0,
-          correctDraws: 0,
-          exactScores: 0,
-        },
+        totals: leaderboardTotals,
       });
 
       await writeDoc('leaderboard', firebaseUser.uid, leaderboardRecord);
