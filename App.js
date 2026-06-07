@@ -2958,11 +2958,12 @@ export default function App() {
     return () => sub.remove();
   }, [adminOpen, authOpen, menu, newsOpen, teamOpen, selected]);
 
-  async function savePrediction(id, a, b) {
+   async function savePrediction(id, a, b) {
     const savedAt = new Date().toISOString();
     const next = { ...predictions, [String(id)]: { a, b, savedAt } };
     setPredictions(next);
     await AsyncStorage.setItem('predictions', JSON.stringify(next));
+
     if (firebaseUser) {
       await writeDoc('predictions', `${id}_${firebaseUser.uid}`, {
         matchId: String(id),
@@ -2971,6 +2972,26 @@ export default function App() {
         teamBScore: b,
         updatedAt: serverTimestamp(),
       });
+
+      const userPredictions = Object.values(next || {});
+      const points = userPredictions.length * 1;
+      const leaderboardRecord = buildPhase3LLeaderboardRecord({
+        userId: firebaseUser.uid,
+        profile: {
+          ...profile,
+          email: firebaseUser.email || profile.email || '',
+        },
+        totals: {
+          points,
+          matchesScored: userPredictions.length,
+          correctWinners: 0,
+          correctDraws: 0,
+          exactScores: 0,
+        },
+      });
+
+      await writeDoc('leaderboard', firebaseUser.uid, leaderboardRecord);
+
       Alert.alert('Prediction saved online', `Your prediction ${a} - ${b} was saved online.`);
     } else {
       Alert.alert('Prediction saved locally', `Your prediction ${a} - ${b} was saved on this phone. Sign in to save online.`);
