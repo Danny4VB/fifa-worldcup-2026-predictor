@@ -142,7 +142,7 @@ const PHASE3PN_MEDIA_STYLE_HINTS = {
 // PHASE3PN_VISIBLE_MEDIA_LABELS
 const PHASE3PN_VISIBLE_MEDIA_LABELS = {
   countdownTitle: 'WorldCup starts in',
-  matchesHeroTitle: 'WorldCup 2026 Countdown',
+  matchesHeroTitle: '2026 soccer tournament Countdown',
   groupsHeroTitle: 'Teams, groups, and road to the final',
   stadiumImageTitle: 'Stadium spotlight',
   teamImagesTitle: 'Team spotlight',
@@ -231,7 +231,7 @@ const PHASE3PL_MENU_SECTIONS = [
 ];
 
 const PHASE3PL_COMPANY_LINE =
-  'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
+  'Match Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
 
 const phase3PLFlagFallback = (team = {}) => {
   const name = String(team.name || team.team || team.teamName || '').toLowerCase();
@@ -285,7 +285,7 @@ const PHASE3PH_MENU_SECTIONS = [
 ];
 
 const PHASE3PH_ABOUT_APP_TEXT =
-  'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
+  'Match Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
 
 const PHASE3PH_MENU_RESTRUCTURE_RULES = [
   'Header shows app logo and app name only.',
@@ -450,19 +450,19 @@ const buildPhase3PBMatchPredictionText = ({ profile, user, teamA, teamB, flagA =
   const name = getPhase3PBShareName(profile, user);
   const left = `${flagA ? flagA + ' ' : ''}${teamA || 'Team A'}`.trim();
   const right = `${flagB ? flagB + ' ' : ''}${teamB || 'Team B'}`.trim();
-  return `${avatar} ${name} predicted:\n\n${left} ${scoreA} - ${scoreB} ${right}\n\nDo you agree, or do you think the result will be different?\n\nDownload the app and predict all WorldCup 2026 matches:\n${PHASE3PB_SHARE_LINK}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
+  return `${avatar} ${name} predicted:\n\n${left} ${scoreA} - ${scoreB} ${right}\n\nDo you agree, or do you think the result will be different?\n\nDownload the app and predict all 2026 soccer tournament matches:\n${PHASE3PB_SHARE_LINK}\n\nMatch Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
 };
 
-const buildPhase3PBGenericChallengeText = ({ profile, user, subject = 'WorldCup 2026' } = {}) => {
+const buildPhase3PBGenericChallengeText = ({ profile, user, subject = '2026 soccer tournament' } = {}) => {
   const avatar = getPhase3PBShareAvatar(profile);
   const name = getPhase3PBShareName(profile, user);
-  return `${avatar} ${name} is challenging you on FIFA WorldCup 2026 Predictor.\n\nDo you agree with their picks, or do you think the results will be different?\n\nDownload the app and predict all WorldCup 2026 matches:\n${PHASE3PB_SHARE_LINK}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
+  return `${avatar} ${name} is challenging you on Match Predict 2026.\n\nDo you agree with their picks, or do you think the results will be different?\n\nDownload the app and predict all 2026 soccer tournament matches:\n${PHASE3PB_SHARE_LINK}\n\nMatch Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
 };
 
 const buildPhase3PBChampionChallengeText = ({ profile, user, champion = 'their champion pick' } = {}) => {
   const avatar = getPhase3PBShareAvatar(profile);
   const name = getPhase3PBShareName(profile, user);
-  return `${avatar} ${name} predicted ${champion} will win WorldCup 2026.\n\nDo you agree, or do you think another team will win?\n\nDownload the app and predict all WorldCup 2026 matches:\n${PHASE3PB_SHARE_LINK}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
+  return `${avatar} ${name} predicted ${champion} will win 2026 soccer tournament.\n\nDo you agree, or do you think another team will win?\n\nDownload the app and predict all 2026 soccer tournament matches:\n${PHASE3PB_SHARE_LINK}\n\nMatch Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.\n\n${PHASE3PB_HASHTAGS}`;
 };
 // PHASE3PA_HEADER_LAYOUT_POLISH
 // Header visual polish only: taller header, larger app logo, more breathing room under phone status bar.
@@ -564,7 +564,7 @@ const PHASE3N_QA_CHECKLIST = [
 ];
 
 const PHASE3N_RELEASE_NOTES_DRAFT =
-  'Updated FIFA WorldCup 2026 Predictor with improved match browsing, groups and knockout bracket, admin sponsor controls, personalized sharing, avatar selection, account deletion support, and leaderboard/scoring foundations.';
+  'Updated Match Predict 2026 with improved match browsing, groups and knockout bracket, admin sponsor controls, personalized sharing, avatar selection, account deletion support, and leaderboard/scoring foundations.';
 
 const PHASE3N_GOOGLE_PLAY_LINK =
   'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
@@ -820,7 +820,7 @@ const getPhase3IAShareName = (profile, user) => {
 };
 
 const getPhase3IAFooter = () =>
-  `Download the app and predict all WorldCup 2026 matches:\n${APP_SHARE_URL}\n\nFIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.`;
+  `Download the app and predict all 2026 soccer tournament matches:\n${APP_SHARE_URL}\n\nMatch Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.`;
 
 const buildPhase3IAMatchShareText = (profile, user, matchText, predictionText) => {
   const avatar = getPhase3IAShareAvatar(profile);
@@ -831,19 +831,19 @@ const buildPhase3IAMatchShareText = (profile, user, matchText, predictionText) =
 const buildPhase3IAChampionShareText = (profile, user, championText) => {
   const avatar = getPhase3IAShareAvatar(profile);
   const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} thinks ${championText} will win WorldCup 2026.\n\nDo you agree? Choose your champion, predict every match, and share your picks with the world on FIFA WorldCup 2026 Predictor.\n\n${getPhase3IAFooter()}`;
+  return `${avatar} ${name} thinks ${championText} will win 2026 soccer tournament.\n\nDo you agree? Choose your champion, predict every match, and share your picks with the world on Match Predict 2026.\n\n${getPhase3IAFooter()}`;
 };
 
 const buildPhase3IALeaderboardShareText = (profile, user) => {
   const avatar = getPhase3IAShareAvatar(profile);
   const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} is competing on the FIFA WorldCup 2026 Predictor leaderboard.\n\nPredict all WorldCup 2026 matches, challenge your friends, and share your predictions with the world.\n\n${getPhase3IAFooter()}`;
+  return `${avatar} ${name} is competing on the Match Predict 2026 leaderboard.\n\nPredict all 2026 soccer tournament matches, challenge your friends, and share your predictions with the world.\n\n${getPhase3IAFooter()}`;
 };
 
 const buildPhase3IAInviteShareText = (profile, user) => {
   const avatar = getPhase3IAShareAvatar(profile);
   const name = getPhase3IAShareName(profile, user);
-  return `${avatar} ${name} invited you to join FIFA WorldCup 2026 Predictor.\n\nDownload the app and predict all WorldCup 2026 matches:\n\n${getPhase3IAFooter()}`;
+  return `${avatar} ${name} invited you to join Match Predict 2026.\n\nDownload the app and predict all 2026 soccer tournament matches:\n\n${getPhase3IAFooter()}`;
 };
 
 // Phase 3D-B: Full Automatic Account Deletion helper
@@ -857,7 +857,7 @@ async function phase3DBDeleteAccount({ auth, db, user, clearLocalAccount, afterD
 
   Alert.alert(
     'Delete account?',
-    'This will delete or anonymize your FIFA WorldCup 2026 Predictor account data connected to this device. This action cannot be undone.',
+    'This will delete or anonymize your Match Predict 2026 account data connected to this device. This action cannot be undone.',
     [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -874,7 +874,7 @@ async function phase3DBDeleteAccount({ auth, db, user, clearLocalAccount, afterD
                 uid,
                 deletedAt: serverTimestamp ? serverTimestamp() : deletedAt.toISOString(),
                 reason: 'user_requested_in_app_deletion',
-                app: 'FIFA WorldCup 2026 Predictor'
+                app: 'Match Predict 2026'
               }, { merge: true });
             } catch (e) {}
 
@@ -1040,9 +1040,9 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
   return ADMOB_AD_UNITS[placement] || ADMOB_AD_UNITS.matches;
 }
 
-const APP_SHARE_NAME = 'FIFA WorldCup 2026 Predictor';
+const APP_SHARE_NAME = 'Match Predict 2026';
 const APP_SHARE_URL = 'https://fifa-worldcup-2026-predictor.web.app/app';
-const APP_BRAND_LINE = 'FIFA WorldCup 2026 Predictor is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
+const APP_BRAND_LINE = 'Match Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
 const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
 const PRIVACY_POLICY_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-privacy-policy';
 const TERMS_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-terms';
@@ -1089,7 +1089,7 @@ async function openExternalUrl(url) {
 function deleteAccountRequestMessage(profile = {}) {
   const email = safeText(profile?.email, 'the email used for my app account');
   const nickname = safeText(profile?.nickname || profile?.name, 'my account');
-  return `Please delete my FIFA WorldCup 2026 Predictor account and associated app data.
+  return `Please delete my Match Predict 2026 account and associated app data.
 
 Account email: ${email}
 Name or nickname: ${nickname}
@@ -1098,13 +1098,13 @@ I understand this request may delete or anonymize my email, name, nickname, prof
 }
 
 async function emailDeleteRequest(profile = {}) {
-  const subject = encodeURIComponent('Delete My FIFA WorldCup 2026 Predictor Account');
+  const subject = encodeURIComponent('Delete My Match Predict 2026 Account');
   const body = encodeURIComponent(deleteAccountRequestMessage(profile));
   await openExternalUrl(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
 }
 
 function brandedShareFooter() {
-  return `Download the app and predict all WorldCup 2026 matches:
+  return `Download the app and predict all 2026 soccer tournament matches:
 ${APP_SHARE_URL}
 
 ${APP_SHARE_NAME}
@@ -1137,13 +1137,13 @@ function matchShareMessage(match, scoreA, scoreB, profile = {}) {
   return `${displayNick(profile)} predicted:
 ${FLAGS[match.teamA] || ''} ${match.teamA} ${scoreA} - ${scoreB} ${match.teamB} ${FLAGS[match.teamB] || ''}
 
-Download the app and predict all WorldCup 2026 matches:
+Download the app and predict all 2026 soccer tournament matches:
 
 ${brandedShareFooter()}`;
 }
 
 function championShareMessage(team, profile = {}) {
-  return `${displayNick(profile)} picked ${FLAGS[team] || ''} ${team} as the WorldCup 2026 champion in ${APP_SHARE_NAME}.
+  return `${displayNick(profile)} picked ${FLAGS[team] || ''} ${team} as the 2026 soccer tournament champion in ${APP_SHARE_NAME}.
 
 Who is your champion pick?
 
@@ -1153,7 +1153,7 @@ ${brandedShareFooter()}`;
 function leaderboardShareMessage(profile = {}) {
   return `${displayNick(profile)} is competing on the Top Predictors leaderboard in ${APP_SHARE_NAME}.
 
-Make your own WorldCup 2026 predictions and challenge friends on the leaderboard.
+Make your own 2026 soccer tournament predictions and challenge friends on the leaderboard.
 
 ${brandedShareFooter()}`;
 }
@@ -1161,7 +1161,7 @@ ${brandedShareFooter()}`;
 function newsShareMessage(item) {
   return `${item.title}
 
-Follow WorldCup 2026 predictions, matches, groups, news, and leaderboard competition in ${APP_SHARE_NAME}.
+Follow 2026 soccer tournament predictions, matches, groups, news, and leaderboard competition in ${APP_SHARE_NAME}.
 
 ${brandedShareFooter()}`;
 }
@@ -1169,7 +1169,7 @@ ${brandedShareFooter()}`;
 function appInviteShareMessage(profile = {}) {
   return `${displayNick(profile)} invited you to join ${APP_SHARE_NAME}.
 
-Download the app and predict all WorldCup 2026 matches:
+Download the app and predict all 2026 soccer tournament matches:
 
 ${brandedShareFooter()}`;
 }
@@ -1446,7 +1446,7 @@ function celebrationShareMessage(match, result, profile = {}) {
 ${result.title}
 Final: ${score}
 
-Make your own WorldCup 2026 predictions and compete on the leaderboard.
+Make your own 2026 soccer tournament predictions and compete on the leaderboard.
 
 ${brandedShareFooter()}`;
 }
@@ -1616,7 +1616,7 @@ function Header({ dark, fg, setDark, setMenu }) {
       <Image source={require('./assets/app-logo.png')} style={styles.logo} />
       <View style={{ flex: 1 }}>
         
-        <Text style={[styles.title, { color: fg }]}>FIFA WorldCup 2026 Predictor</Text>
+        <Text style={[styles.title, { color: fg }]}>Match Predict 2026</Text>
       </View>
       <TouchableOpacity onPress={() => setDark(!dark)} style={styles.iconBtn}>
         <Text style={{ fontSize: 22 }}>{dark ? '☀️' : '🌙'}</Text>
@@ -1984,7 +1984,7 @@ function KnockoutBracket({ dark, fg }) {
         <View style={styles.bracketConnectorColumn}>{semiLeft.map((x) => <Text key={x} style={[styles.bracketAdvance, styles.bracketAdvanceTall]}>{x}</Text>)}</View>
         <View style={styles.trophyCenterLarge}>
           <Text style={{ fontSize: 78 }}>🏆</Text>
-          <Text style={styles.trophyText}>WorldCup 2026</Text>
+          <Text style={styles.trophyText}>2026 soccer tournament</Text>
           <Text style={styles.trophySub}>Final</Text>
           <View style={styles.finalCupLine} />
           <Text style={styles.trophySub}>Champion</Text>
