@@ -433,7 +433,7 @@ const PHASE3PC_BRACKET_NEXT_STEP_NOTES = [
 
 // PHASE3PB_FINAL_SHARE_TEXT
 const PHASE3PB_SHARE_LINK = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor';
-const PHASE3PB_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
+const PHASE3PB_HASHTAGS = '#MatchPredict2026 #Soccer #HobbeeFUN #DiscoverFUN';
 
 const getPhase3PBShareAvatar = (profile) =>
   profile?.avatar || profile?.avatarEmoji || profile?.selectedAvatar || '⚽';
@@ -1099,18 +1099,18 @@ function getAdUnitId(placement = 'matches', settings = DEFAULT_AD_SETTINGS) {
 }
 
 const APP_SHARE_NAME = 'Match Predict 2026';
-const APP_SHARE_URL = 'https://fifa-worldcup-2026-predictor.web.app/app';
+const APP_SHARE_URL = 'https://fifa--2026-predictor.web.app/app';
 const APP_BRAND_LINE = 'Match Predict 2026 is a product of Virtual Beehive Inc., the company behind Hobbee.FUN.';
-const APP_SHARE_HASHTAGS = '#WorldCup2026 #Soccer #HobbeeFUN #DiscoverFUN';
-const PRIVACY_POLICY_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-privacy-policy';
-const TERMS_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-terms';
-const DELETE_ACCOUNT_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifaworldcup2026predictor-delete-account';
+const APP_SHARE_HASHTAGS = '#2026 #Soccer #HobbeeFUN #DiscoverFUN';
+const PRIVACY_POLICY_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifa2026predictor-privacy-policy';
+const TERMS_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifa2026predictor-terms';
+const DELETE_ACCOUNT_URL = 'https://play.google.com/store/apps/details?id=com.virtualbeehive.fifa2026predictor-delete-account';
 const SUPPORT_EMAIL = 'danny@virtualbeehiveinc.com';
 
 // PHASE3G_NOTIFICATION_PREFS
 // Lightweight notification preference center. This does not send push notifications yet.
 // It prepares user controls before Expo/Firebase push notification wiring is added later.
-const NOTIFICATION_PREFS_KEY = 'worldcupPredictorNotificationPrefs:v1';
+const NOTIFICATION_PREFS_KEY = 'PredictorNotificationPrefs:v1';
 const DEFAULT_NOTIFICATION_PREFS = {
   matchReminders: true,
   predictionReminders: true,
