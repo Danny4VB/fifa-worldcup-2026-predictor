@@ -1548,7 +1548,7 @@ function SponsorBanner({ dark, sponsor }) {
     return () => loop.stop();
   }, [x]);
 
-  if (sponsor?.active === false) return null;
+    if (!sponsor || sponsor.active !== true) return null;
   const name = safeText(sponsor?.name, 'Hobbee.FUN');
   const message = safeText(sponsor?.message, 'Visit Hobbee.FUN');
   const callToAction = safeText(sponsor?.callToAction, 'Visit sponsor');
@@ -2864,10 +2864,17 @@ export default function App() {
   useEffect(() => {
     async function loadSponsor() {
       try {
-        const active = await readDocCached('sponsors', 'active', COST_CONTROL.sponsorCacheMs);
-        if (active) setSponsor(active);
+        const active = await readDoc('sponsors', 'active');
+        setSponsor(active || null);
       } catch (e) {
         console.log('Sponsor load failed', e?.message || e);
+        try {
+          const fallback = await readDocCached('sponsors', 'active', COST_CONTROL.sponsorCacheMs);
+          setSponsor(fallback || null);
+        } catch (cacheError) {
+          console.log('Sponsor cache fallback failed', cacheError?.message || cacheError);
+          setSponsor(null);
+        }
       }
     }
     loadSponsor();
