@@ -1239,7 +1239,7 @@ const GROUPS = {
 const FLAGS = {
   Mexico: '🇲🇽', 'South Africa': '🇿🇦', 'Korea Republic': '🇰🇷', Czechia: '🇨🇿',
   Canada: '🇨🇦', 'Bosnia & Herzegovina': '🇧🇦', Qatar: '🇶🇦', Switzerland: '🇨🇭',
-  Brazil: '🇧🇷', Morocco: '🇲🇦', Haiti: '🇭🇹', Scotland: '🏴',
+  Brazil: '🇧🇷', Morocco: '🇲🇦', Haiti: '🇭🇹', Scotland: 'SCO',
   USA: '🇺🇸', Paraguay: '🇵🇾', Australia: '🇦🇺', Turkiye: '🇹🇷',
   Germany: '🇩🇪', Curacao: '🇨🇼', 'Cote d Ivoire': '🇨🇮', Ecuador: '🇪🇨',
   Netherlands: '🇳🇱', Japan: '🇯🇵', Sweden: '🇸🇪', Tunisia: '🇹🇳',
@@ -1248,7 +1248,7 @@ const FLAGS = {
   France: '🇫🇷', Senegal: '🇸🇳', Iraq: '🇮🇶', Norway: '🇳🇴',
   Argentina: '🇦🇷', Algeria: '🇩🇿', Austria: '🇦🇹', Jordan: '🇯🇴',
   Portugal: '🇵🇹', 'Congo DR': '🇨🇩', Uzbekistan: '🇺🇿', Colombia: '🇨🇴',
-  England: '🏴', Croatia: '🇭🇷', Ghana: '🇬🇭', Panama: '🇵🇦',
+  England: 'ENG', Croatia: '🇭🇷', Ghana: '🇬🇭', Panama: '🇵🇦',
 };
 
 const STADIUMS = [
