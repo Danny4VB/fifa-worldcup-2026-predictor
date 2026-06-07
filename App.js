@@ -1646,7 +1646,7 @@ function BouncingBall() {
   );
 }
 
-function Matches({ dark, fg, predictions, setSelected, adSettings }) {
+function Matches({ dark, fg, predictions, setSelected, adSettings, sponsor }) {
   return (
     <ScrollView style={{ padding: 12 }}>
       <View style={styles.matchesTitleRow}>
@@ -1654,7 +1654,7 @@ function Matches({ dark, fg, predictions, setSelected, adSettings }) {
         <BouncingBall />
       </View>
       <Text style={[styles.matchesHelp, { color: fg }]}>Tap any match to predict before halftime.</Text>
-      <AdBox dark={dark} tone={0} placement="matches" adSettings={adSettings} />
+      <SponsorBanner dark={dark} sponsor={sponsor} />
       {FIXTURES.map((match, index) => {
         const st = matchStatus(match);
         const key = String(match.id);
@@ -1671,7 +1671,7 @@ function Matches({ dark, fg, predictions, setSelected, adSettings }) {
               <Text style={{ color: fg }}>{match.stadium} {match.city}</Text>
               {pred ? <Text style={{ color: COLORS.green, fontWeight: '900' }}>Your prediction: {pred.a} - {pred.b}</Text> : <Text style={{ color: COLORS.amber }}>No prediction yet</Text>}
             </TouchableOpacity>
-            {(index + 1) % 4 === 0 && <AdBox dark={dark} tone={index} placement="matches" adSettings={adSettings} />}
+            {(index + 1) % 3 === 0 && <AdBox dark={dark} tone={index} placement="matches" adSettings={adSettings} />}
           </View>
         );
       })}
