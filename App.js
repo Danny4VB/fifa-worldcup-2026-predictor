@@ -1221,6 +1221,21 @@ async function writeDoc(path, id, data, merge = true) {
   try { await AsyncStorage.removeItem(cacheKeyForDoc(path, id)); } catch {}
 }
 
+async function readLeaderboard(limitCount = 25) {
+  try {
+    const q = query(
+      collection(db, 'leaderboard'),
+      orderBy('points', 'desc'),
+      limit(limitCount)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.log('Leaderboard read failed', e?.message || e);
+    return [];
+  }
+}
+
 const GROUPS = {
   A: ['Mexico', 'South Africa', 'Korea Republic', 'Czechia'],
   B: ['Canada', 'Bosnia & Herzegovina', 'Qatar', 'Switzerland'],
@@ -2191,12 +2206,34 @@ function TeamDetail({ team, onClose, dark }) {
 
 function TopPredictors({ dark, fg, adSettings, profile }) {
   const [visibleCount, setVisibleCount] = useState(COST_CONTROL.leaderboardPageSize);
-  const list = Array.from({ length: 50 }, (_, i) => ({ nick: `Predictor${i + 1}`, points: 120 - i * 2, correct: Math.max(1, 12 - (i % 7)), photo: AVATAR_OPTIONS[i % AVATAR_OPTIONS.length] }));
+  const [list, setList] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLeaderboard() {
+      setLoadingLeaderboard(true);
+      const records = await readLeaderboard(50);
+      if (active) {
+        setList(records);
+        setLoadingLeaderboard(false);
+      }
+    }
+
+    loadLeaderboard();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const visibleList = list.slice(0, visibleCount);
+
   return (
     <ScrollView style={{ padding: 12 }}>
       <Text style={[styles.sectionTitle, { color: fg }]}>Top predictors</Text>
-      
+
       <ShareRow message={leaderboardShareMessage(profile)} shareLabel="Share" title="Share leaderboard" />
       <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: COLORS.amber }]}>
         <Text style={{ fontSize: 34 }}>{getAvatar(profile)}</Text>
@@ -2205,19 +2242,35 @@ function TopPredictors({ dark, fg, adSettings, profile }) {
           <Text style={{ color: fg }}>{displayNick(profile)} avatar can be changed in Menu</Text>
         </View>
       </View>
-      {visibleList.map((u, i) => (
-        <React.Fragment key={u.nick}>
-          <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}> 
-            <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
-            <Text style={{ fontSize: 28 }}>{u.photo}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: fg, fontWeight: '900' }}>{u.nick}</Text>
-              <Text style={{ color: fg }}>{u.correct} correct {u.points} pts</Text>
+
+      {loadingLeaderboard ? (
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
+          <Text style={{ color: fg, fontWeight: '900' }}>Loading real leaderboard...</Text>
+          <Text style={{ color: muted, marginTop: 6 }}>Top predictors will appear from saved user scores.</Text>
+        </View>
+      ) : visibleList.length === 0 ? (
+        <View style={[styles.card, dark ? styles.cardDark : styles.cardLight]}>
+          <Text style={{ color: fg, fontWeight: '900' }}>No leaderboard records yet</Text>
+          <Text style={{ color: muted, marginTop: 6 }}>Real users will appear here after they save predictions and leaderboard points are recorded.</Text>
+        </View>
+      ) : (
+        visibleList.map((u, i) => (
+          <React.Fragment key={u.id || u.userId || u.nick || `leaderboard-${i}`}>
+            <View style={[styles.card, dark ? styles.cardDark : styles.cardLight, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+              <Text style={{ color: COLORS.amber, fontWeight: '900' }}>#{i + 1}</Text>
+              <Text style={{ fontSize: 28 }}>{u.avatar || u.photo || '⚽'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: fg, fontWeight: '900' }}>{u.nickname || u.nick || 'Fan'}</Text>
+                <Text style={{ color: fg }}>
+                  {Number(u.correctWinners || u.correct || 0)} correct • {Number(u.points || 0)} pts
+                </Text>
+              </View>
             </View>
-          </View>
-          {(i + 1) % 3 === 0 && i !== visibleList.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
-        </React.Fragment>
-      ))}
+            {(i + 1) % 3 === 0 && i !== visibleList.length - 1 && <AdBox dark={dark} tone={i} placement="top" adSettings={adSettings} />}
+          </React.Fragment>
+        ))
+      )}
+
       {visibleCount < list.length ? (
         <ButtonPill
           label={`Load ${Math.min(COST_CONTROL.leaderboardPageSize, list.length - visibleCount)} more predictors`}
