@@ -481,7 +481,7 @@ import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, deleteDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, deleteDoc, collection, query, where, getDocs, writeBatch, orderBy, limit } from 'firebase/firestore';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import * as Clipboard from 'expo-clipboard';
 
